@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle de Gastos</title>
+
+  <!--
+    ================================================================
+    CONTROLE DE GASTOS — v2.0 (arquitetura modular)
+    ================================================================
+    Este é o arquivo de entrada (main) da aplicação.
+    Ele apenas declara a estrutura HTML e carrega os módulos
+    na ordem correta de dependência:
+
+      Dependências externas
+        └── Chart.js (CDN)
+
+      Módulos internos (js/)
+        ├── config.js   — categorias, meses, constantes
+        ├── state.js    — estado global e persistência
+        ├── finance.js  — cálculos financeiros (funções puras)
+        ├── render.js   — dashboard e tabela anual
+        ├── charts.js   — gráficos Chart.js
+        ├── modals.js   — modais de lançamento, salário e subcat
+        └── app.js      — inicialização e navegação (entry point)
+
+      Estilos (css/)
+        └── styles.css  — design tokens e todos os componentes
+
+    Para abrir localmente: basta abrir este arquivo no navegador.
+    Para deploy: subir toda a pasta controle-gastos/ para o servidor.
+    ================================================================
+  -->
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Biblioteca de gráficos (carregada antes dos módulos JS) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+</head>
+
+<body>
+<div class="app">
+
+  <!-- ══════════════════════════════════════════
+       CABEÇALHO
+       Controles de navegação temporal (mês/ano)
+       e acesso ao modal de salário.
+       ══════════════════════════════════════════ -->
+  <header class="header">
+    <div class="header-left">
+      <div class="header-logo" aria-hidden="true">💰</div>
+      <div>
+        <div class="header-title">Controle de Gastos</div>
+        <div class="header-subtitle">Gestão financeira pessoal</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="select-group">
+        <label for="sel-month">Mês</label>
+        <select id="sel-month"></select>
+      </div>
+      <div class="select-group">
+        <label for="sel-year">Ano</label>
+        <select id="sel-year"></select>
+      </div>
+      <button class="btn" onclick="openSalaryModal()">Salário</button>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════
+       NAVEGAÇÃO POR ABAS
+       Dashboard | Visão anual | Gráficos
+       ══════════════════════════════════════════ -->
+  <nav class="nav" role="tablist">
+    <button class="nav-tab active" role="tab" aria-selected="true"
+            onclick="switchTab('dashboard', this)">Dashboard</button>
+    <button class="nav-tab" role="tab" aria-selected="false"
+            onclick="switchTab('anual', this)">Visão anual</button>
+    <button class="nav-tab" role="tab" aria-selected="false"
+            onclick="switchTab('graficos', this)">Gráficos</button>
+  </nav>
+
+  <!-- ══════════════════════════════════════════
+       CONTEÚDO DAS ABAS
+       ══════════════════════════════════════════ -->
+  <main class="main">
+
+    <!-- ABA 1: DASHBOARD -->
+    <section id="tab-dashboard">
+
+      <!-- Barra proporcional de distribuição do salário -->
+      <div class="salary-bar-wrap">
+        <div class="salary-bar-label">
+          <span id="salary-label">Salário líquido: R$ 0,00</span>
+          <span id="liquid-label">Líquido: R$ 0,00</span>
+        </div>
+        <div class="salary-bar-track">
+          <div class="salary-bar-seg" id="bar-invest"   style="background:var(--invest);   width:0"></div>
+          <div class="salary-bar-seg" id="bar-fixed"    style="background:var(--fixed);    width:0"></div>
+          <div class="salary-bar-seg" id="bar-variable" style="background:var(--variable); width:0"></div>
+          <div class="salary-bar-seg" id="bar-reserve"  style="background:var(--reserve);  width:0"></div>
+        </div>
+        <div class="chart-legend">
+          <span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--invest)"></span>Investimentos</span>
+          <span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--fixed)"></span>Gastos fixos</span>
+          <span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--variable)"></span>Gastos variáveis</span>
+          <span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--reserve)"></span>Reservas</span>
+        </div>
+      </div>
+
+      <!-- Cards de métricas (preenchidos por render.js) -->
+      <div class="metrics-grid" id="metrics-grid"></div>
+
+      <!-- Cards de categorias (preenchidos por render.js) -->
+      <p class="section-title">Categorias</p>
+      <div class="categories-grid" id="categories-grid"></div>
+
+    </section>
+
+    <!-- ABA 2: VISÃO ANUAL -->
+    <section id="tab-anual" class="hidden">
+      <div class="table-wrap">
+        <table class="annual" id="annual-table"
+               aria-label="Tabela anual de gastos por categoria e mês">
+          <thead id="annual-thead"></thead>
+          <tbody id="annual-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ABA 3: GRÁFICOS -->
+    <section id="tab-graficos" class="hidden">
+      <div class="charts-grid">
+
+        <!-- Gráfico 1: Pizza — distribuição mensal -->
+        <div class="chart-card">
+          <div class="chart-card-title">Distribuição mensal</div>
+          <div id="pie-legend" class="chart-legend" style="margin-bottom:10px"></div>
+          <div style="position:relative; height:260px">
+            <canvas id="chart-pie" role="img"
+              aria-label="Gráfico de pizza com distribuição dos gastos mensais por categoria">
+            </canvas>
+          </div>
+        </div>
+
+        <!-- Gráfico 2: Linha — evolução anual por categoria -->
+        <div class="chart-card">
+          <div class="chart-card-title">Evolução anual por categoria</div>
+          <div id="line-legend" class="chart-legend" style="margin-bottom:10px"></div>
+          <div style="position:relative; height:260px">
+            <canvas id="chart-line" role="img"
+              aria-label="Gráfico de linha com evolução de gastos ao longo do ano">
+            </canvas>
+          </div>
+        </div>
+
+        <!-- Gráfico 3: Barras — gastos vs salário -->
+        <div class="chart-card">
+          <div class="chart-card-title">Gastos vs salário (anual)</div>
+          <div style="position:relative; height:260px">
+            <canvas id="chart-bar" role="img"
+              aria-label="Gráfico de barras comparando gastos e salário mês a mês">
+            </canvas>
+          </div>
+        </div>
+
+        <!-- Gráfico 4: Barras — líquido mensal -->
+        <div class="chart-card">
+          <div class="chart-card-title">Líquido mensal (sobra / déficit)</div>
+          <div style="position:relative; height:260px">
+            <canvas id="chart-liquid" role="img"
+              aria-label="Gráfico de barras mostrando o líquido mensal positivo ou negativo">
+            </canvas>
+          </div>
+        </div>
+
+        <!-- Gráfico 5: Linha dupla — evolução acumulada dos investimentos -->
+        <div class="chart-card" style="grid-column: 1 / -1">
+          <div class="chart-card-title">Evolução acumulada dos investimentos</div>
+          <div id="invest-legend" class="chart-legend" style="margin-bottom:10px"></div>
+          <div style="position:relative; height:280px">
+            <canvas id="chart-invest" role="img"
+              aria-label="Gráfico de linha com evolução acumulada dos investimentos e percentual de crescimento mês a mês">
+            </canvas>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════
+     FAB — Botão flutuante para novo lançamento
+     ══════════════════════════════════════════ -->
+<button class="fab" onclick="openAddModal()" aria-label="Adicionar lançamento">+</button>
+
+<!-- ══════════════════════════════════════════
+     MODAL 1: Adicionar / Editar lançamento
+     ══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-entry"
+     role="dialog" aria-modal="true" aria-label="Adicionar lançamento">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-entry-title">Novo lançamento</span>
+      <button class="modal-close" onclick="closeModal('modal-entry')" aria-label="Fechar">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label for="entry-cat">Categoria</label>
+        <select id="entry-cat" onchange="populateSubcats()"></select>
+      </div>
+      <div class="field">
+        <label for="entry-subcat">Subcategoria</label>
+        <select id="entry-subcat"></select>
+      </div>
+      <div class="field">
+        <label for="entry-desc">Descrição (opcional)</label>
+        <input type="text" id="entry-desc" placeholder="ex: conta de luz fevereiro">
+      </div>
+      <div class="field">
+        <label for="entry-value">Valor (R$)</label>
+        <input type="number" id="entry-value" placeholder="0,00" min="0" step="0.01">
+      </div>
+      <div class="field">
+        <label for="entry-month">Mês</label>
+        <select id="entry-month"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger hidden" id="btn-delete-entry" onclick="deleteEntry()">Excluir</button>
+      <button class="btn" onclick="closeModal('modal-entry')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEntry()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL 2: Definir salário líquido
+     ══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-salary"
+     role="dialog" aria-modal="true" aria-label="Definir salário">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Salário líquido mensal</span>
+      <button class="modal-close" onclick="closeModal('modal-salary')" aria-label="Fechar">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px; color:var(--text-2)">
+        Define o salário para o mês selecionado ou para todos os meses do ano.
+      </p>
+      <div class="field">
+        <label for="salary-value">Valor (R$)</label>
+        <input type="number" id="salary-value" placeholder="0,00" min="0" step="0.01">
+      </div>
+      <div class="field">
+        <label for="salary-scope">Aplicar em</label>
+        <select id="salary-scope">
+          <option value="month">Apenas este mês</option>
+          <option value="year">Todos os meses deste ano</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-salary')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveSalary()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL 3: Lançamentos de uma subcategoria
+     Lista todos os lançamentos com editar/excluir
+     ══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-subcat"
+     role="dialog" aria-modal="true" aria-label="Lançamentos da subcategoria">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div>
+        <span class="modal-title" id="subcat-modal-title">Lançamentos</span>
+        <div class="subcat-modal-total" id="subcat-modal-total"></div>
+      </div>
+      <button class="modal-close" aria-label="Fechar"
+              onclick="clearSubcatContext(); closeModal('modal-subcat')">×</button>
+    </div>
+    <div class="modal-body" style="max-height:55vh; overflow-y:auto; padding-bottom:8px">
+      <div class="entries-list" id="subcat-entries-list"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn btn-primary" onclick="addFromSubcatModal()">+ Novo lançamento</button>
+      <button class="btn" onclick="clearSubcatContext(); closeModal('modal-subcat')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast de feedback -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════
+     MÓDULOS JAVASCRIPT
+     Ordem obrigatória de carregamento:
+       1. config   — constantes e definições
+       2. state    — estado e persistência
+       3. finance  — cálculos (depende de config e state)
+       4. render   — dashboard e tabela (depende de finance)
+       5. charts   — gráficos (depende de finance)
+       6. modals   — modais (depende de render)
+       7. app      — inicialização (depende de tudo acima)
+     ══════════════════════════════════════════ -->
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/finance.js"></script>
+<script src="js/render.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/modals.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
