@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Gastos</title>
+
+<!--
+  ================================================================
+  CONTROLE DE GASTOS — v1.0
+  ================================================================
+  Tecnologia : HTML + CSS + JavaScript puro
+  Gráficos   : Chart.js 4.4.1 (CDN)
+  Persistência: localStorage (dados salvos no navegador)
+  Deploy      : GitHub Pages (arquivo único, sem servidor)
+
+  Estrutura do código:
+  1. <style>   — Design tokens, layout, componentes
+  2. <body>    — Cabeçalho, abas, dashboard, modais
+  3. <script>  — Dados, cálculos, renderização, persistência
+  ================================================================
+-->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+<style>
+/* ============================================================
+   1. DESIGN TOKENS & RESET
+   Centraliza todas as cores e medidas em variáveis CSS,
+   facilitando customizações futuras e suporte a dark mode.
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Superfícies */
+  --bg:        #F5F5F3;
+  --surface:   #FFFFFF;
+  --surface-2: #F0F0ED;
+
+  /* Bordas */
+  --border:    rgba(0,0,0,0.10);
+  --border-md: rgba(0,0,0,0.20);
+
+  /* Texto */
+  --text:   #1A1A18;
+  --text-2: #5F5E5A;
+  --text-3: #B4B2A9;
+
+  /* Raios de borda */
+  --radius:    8px;
+  --radius-lg: 12px;
+
+  /* Paleta semântica das 4 categorias financeiras */
+  --invest:      #1D9E75;   /* teal   — investimentos */
+  --invest-bg:   #E1F5EE;
+  --fixed:       #534AB7;   /* purple — gastos fixos */
+  --fixed-bg:    #EEEDFE;
+  --variable:    #D85A30;   /* coral  — gastos variáveis */
+  --variable-bg: #FAECE7;
+  --reserve:     #185FA5;   /* blue   — reservas/objetivos */
+  --reserve-bg:  #E6F1FB;
+
+  /* Semântica de status */
+  --success: #639922;
+  --danger:  #E24B4A;
+}
+
+/* Dark mode automático */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:        #1C1C1A;
+    --surface:   #2C2C2A;
+    --surface-2: #383836;
+    --border:    rgba(255,255,255,0.10);
+    --border-md: rgba(255,255,255,0.20);
+    --text:      #F1EFE8;
+    --text-2:    #B4B2A9;
+    --text-3:    #5F5E5A;
+  }
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   2. LAYOUT PRINCIPAL
+   ============================================================ */
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* Cabeçalho fixo no topo */
+.header {
+  background: var(--surface);
+  border-bottom: 0.5px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+.header-logo {
+  width: 32px; height: 32px;
+  background: var(--invest);
+  border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 18px;
+}
+.header-title    { font-size: 15px; font-weight: 600; }
+.header-subtitle { font-size: 12px; color: var(--text-2); }
+.header-right    { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* Seletores de mês e ano */
+.select-group { display: flex; align-items: center; gap: 6px; }
+.select-group label { font-size: 12px; color: var(--text-2); }
+select {
+  background: var(--surface-2);
+  border: 0.5px solid var(--border-md);
+  border-radius: var(--radius);
+  padding: 5px 8px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* ============================================================
+   3. NAVEGAÇÃO POR ABAS
+   ============================================================ */
+.nav {
+  background: var(--surface);
+  border-bottom: 0.5px solid var(--border);
+  padding: 0 20px;
+  display: flex;
+  overflow-x: auto;
+}
+.nav-tab {
+  padding: 10px 16px;
+  font-size: 13px;
+  color: var(--text-2);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  background: none;
+  border-top: none; border-left: none; border-right: none;
+  transition: color 0.15s, border-color 0.15s;
+}
+.nav-tab:hover { color: var(--text); }
+.nav-tab.active { color: var(--invest); border-bottom-color: var(--invest); font-weight: 600; }
+
+/* Área de conteúdo */
+.main {
+  padding: 20px;
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ============================================================
+   4. CARDS DE MÉTRICAS (sumário financeiro)
+   ============================================================ */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.metric-card {
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+.metric-label {
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: 4px;
+  display: flex; align-items: center; gap: 4px;
+}
+.metric-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.metric-value { font-size: 20px; font-weight: 600; }
+.metric-value.positive { color: var(--success); }
+.metric-value.negative { color: var(--danger); }
+
+/* ============================================================
+   5. BARRA DE DISTRIBUIÇÃO DO SALÁRIO
+   Representa visualmente como o salário está distribuído
+   entre as 4 categorias.
+   ============================================================ */
+.salary-bar-wrap {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+.salary-bar-label {
+  display: flex; justify-content: space-between;
+  font-size: 13px; margin-bottom: 8px;
+}
+.salary-bar-track {
+  height: 10px;
+  background: var(--surface-2);
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex; gap: 2px;
+}
+.salary-bar-seg { height: 100%; transition: width 0.4s ease; }
+.chart-legend {
+  display: flex; flex-wrap: wrap;
+  gap: 10px; margin-top: 8px;
+}
+.chart-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-2); }
+.chart-legend-dot  { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+/* ============================================================
+   6. CARDS DE CATEGORIA
+   Exibe subcategorias com barras de progresso individuais.
+   ============================================================ */
+.section-title {
+  font-size: 12px; font-weight: 600; color: var(--text-2);
+  margin-bottom: 10px; margin-top: 20px;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px; margin-bottom: 20px;
+}
+.cat-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.cat-header {
+  padding: 12px 14px 10px;
+  border-bottom: 0.5px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.cat-title { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+.cat-badge { font-size: 11px; padding: 2px 7px; border-radius: 999px; font-weight: 600; }
+.cat-total { font-size: 15px; font-weight: 600; }
+.cat-progress { height: 3px; background: var(--border); margin: 0 14px 2px; }
+.cat-progress-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+.cat-items { padding: 6px 0; }
+.cat-item {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 5px 14px; gap: 8px;
+  cursor: pointer; transition: background 0.1s;
+}
+.cat-item:hover { background: var(--surface-2); }
+.cat-item-name  { font-size: 13px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cat-item-value { font-size: 13px; font-weight: 600; white-space: nowrap; }
+.cat-item-bar   { width: 60px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; flex-shrink: 0; }
+.cat-item-bar-fill { height: 100%; border-radius: 2px; }
+.cat-add {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px; font-size: 12px; color: var(--text-3);
+  cursor: pointer; border-top: 0.5px solid var(--border);
+  margin-top: 4px; background: none;
+  border-left: none; border-right: none; border-bottom: none;
+  width: 100%; text-align: left; transition: color 0.15s;
+}
+.cat-add:hover { color: var(--text-2); }
+
+/* ============================================================
+   7. TABELA ANUAL
+   Visão completa de todos os meses do ano por categoria.
+   ============================================================ */
+.table-wrap { overflow-x: auto; }
+table.annual {
+  width: 100%; border-collapse: collapse;
+  font-size: 12px; min-width: 700px;
+}
+table.annual th, table.annual td {
+  padding: 7px 10px;
+  border-bottom: 0.5px solid var(--border);
+  white-space: nowrap;
+}
+table.annual th {
+  background: var(--surface-2); color: var(--text-2);
+  font-weight: 600; text-align: right;
+  position: sticky; top: 0;
+}
+table.annual th:first-child, table.annual td:first-child {
+  text-align: left; position: sticky; left: 0;
+  background: var(--surface); z-index: 1;
+}
+table.annual th:first-child { background: var(--surface-2); }
+table.annual tr.cat-row td  { font-weight: 600; background: var(--surface-2); }
+table.annual td { text-align: right; }
+table.annual td.negative { color: var(--danger); }
+table.annual td.positive { color: var(--success); }
+table.annual tr:hover td { background: var(--surface-2); }
+
+/* ============================================================
+   8. GRÁFICOS
+   ============================================================ */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 12px; margin-bottom: 20px;
+}
+.chart-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+.chart-card-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+
+/* ============================================================
+   9. MODAIS
+   ============================================================ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4); z-index: 200;
+  align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 0.5px solid var(--border);
+  width: 100%; max-width: 420px;
+  max-height: 90vh; overflow-y: auto;
+}
+.modal-header {
+  padding: 16px 20px 12px;
+  border-bottom: 0.5px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-title { font-size: 15px; font-weight: 600; }
+.modal-close {
+  background: none; border: none; color: var(--text-2);
+  cursor: pointer; font-size: 20px; line-height: 1;
+}
+.modal-body  { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+.modal-footer {
+  padding: 12px 20px 16px;
+  border-top: 0.5px solid var(--border);
+  display: flex; gap: 8px; justify-content: flex-end;
+}
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 12px; color: var(--text-2); font-weight: 600; }
+input[type="text"], input[type="number"], select {
+  width: 100%; background: var(--surface-2);
+  border: 0.5px solid var(--border-md);
+  border-radius: var(--radius);
+  padding: 7px 10px; font-size: 13px; color: var(--text);
+}
+input:focus, select:focus {
+  outline: none; border-color: var(--invest);
+  box-shadow: 0 0 0 2px rgba(29,158,117,0.15);
+}
+
+/* ============================================================
+   10. BOTÕES
+   ============================================================ */
+.btn {
+  padding: 7px 16px; border-radius: var(--radius);
+  font-size: 13px; cursor: pointer;
+  border: 0.5px solid var(--border-md);
+  background: none; color: var(--text);
+  transition: background 0.15s;
+}
+.btn:hover    { background: var(--surface-2); }
+.btn-primary  { background: var(--invest); color: #fff; border-color: var(--invest); font-weight: 600; }
+.btn-primary:hover { background: #0F6E56; border-color: #0F6E56; }
+.btn-danger   { color: var(--danger); border-color: var(--danger); }
+.btn-danger:hover { background: #FCEBEB; }
+
+/* Botão de ação flutuante (FAB) */
+.fab {
+  position: fixed; bottom: 24px; right: 24px;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--invest); color: #fff;
+  border: none; font-size: 28px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  z-index: 150; transition: background 0.15s, transform 0.1s;
+}
+.fab:hover  { background: #0F6E56; transform: scale(1.05); }
+.fab:active { transform: scale(0.96); }
+
+/* ============================================================
+   11. TOAST DE CONFIRMAÇÃO
+   ============================================================ */
+.toast {
+  position: fixed; bottom: 84px; right: 20px;
+  background: #2C2C2A; color: #fff;
+  padding: 9px 16px; border-radius: var(--radius);
+  font-size: 13px; opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 300; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.hidden { display: none !important; }
+
+/* ============================================================
+   12. RESPONSIVIDADE (mobile-first)
+   ============================================================ */
+@media (max-width: 600px) {
+  .header  { padding: 10px 14px; }
+  .main    { padding: 12px; }
+  .metrics-grid    { grid-template-columns: repeat(2, 1fr); }
+  .categories-grid { grid-template-columns: 1fr; }
+  .charts-grid     { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<!-- ══════════════════════════════════════════
+     CABEÇALHO
+     Controles de navegação temporal (mês/ano)
+     e acesso ao modal de salário.
+     ══════════════════════════════════════════ -->
+<header class="header">
+  <div class="header-left">
+    <div class="header-logo" aria-hidden="true">💰</div>
+    <div>
+      <div class="header-title">Controle de Gastos</div>
+      <div class="header-subtitle">Gestão financeira pessoal</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="select-group">
+      <label for="sel-month">Mês</label>
+      <select id="sel-month"></select>
+    </div>
+    <div class="select-group">
+      <label for="sel-year">Ano</label>
+      <select id="sel-year"></select>
+    </div>
+    <button class="btn" onclick="openSalaryModal()">Salário</button>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════
+     NAVEGAÇÃO POR ABAS
+     Dashboard | Visão anual | Gráficos
+     ══════════════════════════════════════════ -->
+<nav class="nav" role="tablist">
+  <button class="nav-tab active" role="tab" onclick="switchTab('dashboard',this)">Dashboard</button>
+  <button class="nav-tab"        role="tab" onclick="switchTab('anual',this)">Visão anual</button>
+  <button class="nav-tab"        role="tab" onclick="switchTab('graficos',this)">Gráficos</button>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     CONTEÚDO DAS ABAS
+     ══════════════════════════════════════════ -->
+<main class="main">
+
+  <!-- ABA 1: DASHBOARD -->
+  <section id="tab-dashboard">
+
+    <!-- Barra de distribuição proporcional do salário -->
+    <div class="salary-bar-wrap">
+      <div class="salary-bar-label">
+        <span id="salary-label">Salário líquido: R$ 0,00</span>
+        <span id="liquid-label">Líquido: R$ 0,00</span>
+      </div>
+      <div class="salary-bar-track">
+        <div class="salary-bar-seg" id="bar-invest"   style="background:var(--invest);   width:0"></div>
+        <div class="salary-bar-seg" id="bar-fixed"    style="background:var(--fixed);    width:0"></div>
+        <div class="salary-bar-seg" id="bar-variable" style="background:var(--variable); width:0"></div>
+        <div class="salary-bar-seg" id="bar-reserve"  style="background:var(--reserve);  width:0"></div>
+      </div>
+      <div class="chart-legend">
+        <span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--invest)"></span>Investimentos</span>
+        <span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--fixed)"></span>Gastos fixos</span>
+        <span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--variable)"></span>Gastos variáveis</span>
+        <span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--reserve)"></span>Reservas</span>
+      </div>
+    </div>
+
+    <!-- Cards de métricas -->
+    <div class="metrics-grid" id="metrics-grid"></div>
+
+    <!-- Cards de categorias com subcategorias -->
+    <p class="section-title">Categorias</p>
+    <div class="categories-grid" id="categories-grid"></div>
+
+  </section>
+
+  <!-- ABA 2: VISÃO ANUAL -->
+  <section id="tab-anual" class="hidden">
+    <div class="table-wrap">
+      <table class="annual" id="annual-table"
+             aria-label="Tabela anual de gastos por categoria e mês">
+        <thead id="annual-thead"></thead>
+        <tbody id="annual-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ABA 3: GRÁFICOS -->
+  <section id="tab-graficos" class="hidden">
+    <div class="charts-grid">
+
+      <!-- Distribuição mensal (pizza) -->
+      <div class="chart-card">
+        <div class="chart-card-title">Distribuição mensal</div>
+        <div id="pie-legend" class="chart-legend" style="margin-bottom:10px"></div>
+        <div style="position:relative; height:260px">
+          <canvas id="chart-pie"
+            role="img"
+            aria-label="Gráfico de pizza com a distribuição dos gastos mensais por categoria">
+            Distribuição de gastos por categoria.
+          </canvas>
+        </div>
+      </div>
+
+      <!-- Evolução anual (linha) -->
+      <div class="chart-card">
+        <div class="chart-card-title">Evolução anual por categoria</div>
+        <div id="line-legend" class="chart-legend" style="margin-bottom:10px"></div>
+        <div style="position:relative; height:260px">
+          <canvas id="chart-line"
+            role="img"
+            aria-label="Gráfico de linha com evolução de gastos ao longo do ano">
+            Evolução de gastos ao longo do ano.
+          </canvas>
+        </div>
+      </div>
+
+      <!-- Gastos vs salário (barras) -->
+      <div class="chart-card">
+        <div class="chart-card-title">Gastos vs salário (anual)</div>
+        <div style="position:relative; height:260px">
+          <canvas id="chart-bar"
+            role="img"
+            aria-label="Gráfico de barras comparando gastos e salário mês a mês">
+            Comparativo de gastos e salário por mês.
+          </canvas>
+        </div>
+      </div>
+
+      <!-- Líquido mensal (barras coloridas) -->
+      <div class="chart-card">
+        <div class="chart-card-title">Líquido mensal (sobra / déficit)</div>
+        <div style="position:relative; height:260px">
+          <canvas id="chart-liquid"
+            role="img"
+            aria-label="Gráfico de barras mostrando o líquido mensal positivo ou negativo">
+            Líquido mensal por mês.
+          </canvas>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+</div>
+
+<!-- ══════════════════════════════════════════
+     FAB — Botão flutuante para novo lançamento
+     ══════════════════════════════════════════ -->
+<button class="fab" onclick="openAddModal()" aria-label="Adicionar lançamento">+</button>
+
+<!-- ══════════════════════════════════════════
+     MODAL: Adicionar / Editar lançamento
+     ══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-entry"
+     role="dialog" aria-modal="true" aria-label="Adicionar lançamento">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-entry-title">Novo lançamento</span>
+      <button class="modal-close" onclick="closeModal('modal-entry')" aria-label="Fechar">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label for="entry-cat">Categoria</label>
+        <select id="entry-cat" onchange="populateSubcats()"></select>
+      </div>
+      <div class="field">
+        <label for="entry-subcat">Subcategoria</label>
+        <select id="entry-subcat"></select>
+      </div>
+      <div class="field">
+        <label for="entry-desc">Descrição (opcional)</label>
+        <input type="text" id="entry-desc" placeholder="ex: conta de luz fevereiro">
+      </div>
+      <div class="field">
+        <label for="entry-value">Valor (R$)</label>
+        <input type="number" id="entry-value" placeholder="0,00" min="0" step="0.01">
+      </div>
+      <div class="field">
+        <label for="entry-month">Mês</label>
+        <select id="entry-month"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger hidden" id="btn-delete-entry" onclick="deleteEntry()">Excluir</button>
+      <button class="btn" onclick="closeModal('modal-entry')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEntry()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL: Definir salário líquido
+     ══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-salary"
+     role="dialog" aria-modal="true" aria-label="Definir salário">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Salário líquido mensal</span>
+      <button class="modal-close" onclick="closeModal('modal-salary')" aria-label="Fechar">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px; color:var(--text-2)">
+        Define o salário para o mês selecionado ou para todos os meses do ano.
+      </p>
+      <div class="field">
+        <label for="salary-value">Valor (R$)</label>
+        <input type="number" id="salary-value" placeholder="0,00" min="0" step="0.01">
+      </div>
+      <div class="field">
+        <label for="salary-scope">Aplicar em</label>
+        <select id="salary-scope">
+          <option value="month">Apenas este mês</option>
+          <option value="year">Todos os meses deste ano</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-salary')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveSalary()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast de feedback -->
+<div class="toast" id="toast"></div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     JAVASCRIPT — LÓGICA DA APLICAÇÃO
+     ══════════════════════════════════════════════════════════ -->
+<script>
+
+/* ============================================================
+   A. DADOS ESTÁTICOS
+   Estrutura de categorias e subcategorias que espelha a
+   planilha original. Para adicionar/remover subcategorias,
+   edite os arrays abaixo.
+   ============================================================ */
+const CATEGORIES = [
+  {
+    id: 'invest',
+    name: 'Investimentos',
+    color: 'var(--invest)',
+    bg: 'var(--invest-bg)',
+    subcats: [
+      'Porquinho Nubank','XP Investimentos','Clear Corretora',
+      'Mercado Bitcoin','Pagbank','Caixinhas/Poupança'
+    ]
+  },
+  {
+    id: 'fixed',
+    name: 'Gastos Fixos/Essências',
+    color: 'var(--fixed)',
+    bg: 'var(--fixed-bg)',
+    subcats: [
+      'Energia','Internet Móvel','Internet Fibra','Saúde',
+      'Plano de Saúde Pietra','IPVA','Gastos Carro','MEI',
+      'Impostos','Leite/Alimentação Pietra','Cartão Passagem','Carro'
+    ]
+  },
+  {
+    id: 'variable',
+    name: 'Gastos Variáveis',
+    color: 'var(--variable)',
+    bg: 'var(--variable-bg)',
+    subcats: [
+      'Taxa CC','Cartão Itaú','Lazer','Férias','Gastos Pietra',
+      'Juquinha','Seguro de vida','Pessoal','Lavagem Carro'
+    ]
+  },
+  {
+    id: 'reserve',
+    name: 'Reserva Financeira/Objetivos',
+    color: 'var(--reserve)',
+    bg: 'var(--reserve-bg)',
+    subcats: [
+      'Imóvel','Carro','Poupança Pietra','Moto','Itens de Casa',
+      'Estudos','Emergencia','Aposentadoria','Investimentos','Emp. Contas Invest'
+    ]
+  }
+];
+
+const MONTHS = [
+  'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'
+];
+
+/* ============================================================
+   B. ESTADO DA APLICAÇÃO
+   Todos os dados são persistidos em localStorage sob a
+   chave "cgastos_v1". Alterar a chave limpa os dados salvos.
+
+   Estrutura:
+   {
+     year  : number,             — ano selecionado
+     month : number (0-11),      — mês selecionado
+     salary: { [year]: { [month]: number } },
+     entries: [
+       { id, year, month, catId, subcat, desc, value }
+     ]
+   }
+   ============================================================ */
+let state = {
+  year:    new Date().getFullYear(),
+  month:   new Date().getMonth(),
+  salary:  {},
+  entries: []
+};
+
+let editingEntryId = null; // ID do lançamento em edição (null = novo)
+let chartPie = null, chartLine = null, chartBar = null, chartLiquid = null;
+
+/* ── Persistência ── */
+function saveState() {
+  try { localStorage.setItem('cgastos_v1', JSON.stringify(state)); } catch(e) {}
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem('cgastos_v1');
+    if (raw) state = { ...state, ...JSON.parse(raw) };
+  } catch(e) {}
+}
+
+/* ============================================================
+   C. CÁLCULOS FINANCEIROS
+   Funções puras que derivam valores do estado.
+   Não modificam o estado — apenas leem e calculam.
+   ============================================================ */
+
+/** Filtra lançamentos por ano e mês */
+function getEntries(year, month) {
+  return state.entries.filter(e => e.year === year && e.month === month);
+}
+
+/** Soma os valores de uma categoria num mês/ano específico */
+function catTotal(catId, year, month) {
+  return getEntries(year, month)
+    .filter(e => e.catId === catId)
+    .reduce((acc, e) => acc + e.value, 0);
+}
+
+/** Soma todos os gastos de todas as categorias num mês/ano */
+function totalGastos(year, month) {
+  return CATEGORIES.reduce((acc, cat) => acc + catTotal(cat.id, year, month), 0);
+}
+
+/** Retorna o salário cadastrado para um mês/ano (0 se não definido) */
+function getSalary(year, month) {
+  return (state.salary[year] && state.salary[year][month]) || 0;
+}
+
+/**
+ * Calcula o líquido do mês: salário − total de gastos.
+ * Positivo = sobra; Negativo = déficit.
+ */
+function getLiquid(year, month) {
+  return getSalary(year, month) - totalGastos(year, month);
+}
+
+/** Percentual de um valor em relação ao total (evita divisão por zero) */
+function pct(value, total) {
+  return total ? (value / total) * 100 : 0;
+}
+
+/** Formata número como moeda brasileira */
+function fmt(v) {
+  return 'R$ ' + Math.abs(v).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2, maximumFractionDigits: 2
+  });
+}
+
+/* ============================================================
+   D. CONTROLES DE INTERFACE — MÊS / ANO
+   ============================================================ */
+function buildSelectors() {
+  const sm = document.getElementById('sel-month');
+  const sy = document.getElementById('sel-year');
+  const em = document.getElementById('entry-month');
+
+  /* Popula seletor de meses */
+  sm.innerHTML = MONTHS.map((m,i) =>
+    `<option value="${i}">${m}</option>`).join('');
+  sm.value = state.month;
+  sm.onchange = () => { state.month = +sm.value; saveState(); render(); };
+
+  /* Popula seletor de anos: ano atual ± 2 */
+  const cur = new Date().getFullYear();
+  for (let y = cur - 2; y <= cur + 1; y++) {
+    sy.innerHTML += `<option value="${y}">${y}</option>`;
+  }
+  sy.value = state.year;
+  sy.onchange = () => { state.year = +sy.value; saveState(); render(); };
+
+  /* Meses no modal de lançamento */
+  em.innerHTML = MONTHS.map((m,i) =>
+    `<option value="${i}">${m}</option>`).join('');
+  em.value = state.month;
+}
+
+/* ============================================================
+   E. NAVEGAÇÃO POR ABAS
+   ============================================================ */
+function switchTab(tab, btn) {
+  ['dashboard','anual','graficos'].forEach(t => {
+    document.getElementById('tab-' + t).classList.add('hidden');
+  });
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+
+  document.getElementById('tab-' + tab).classList.remove('hidden');
+  btn.classList.add('active');
+
+  /* Renderiza conteúdo pesado apenas quando a aba é aberta */
+  if (tab === 'graficos') renderCharts();
+  if (tab === 'anual')    renderAnnual();
+}
+
+/* ============================================================
+   F. RENDERIZAÇÃO — DASHBOARD
+   Recalcula e redesenha todos os elementos do dashboard
+   com base no mês/ano selecionado.
+   ============================================================ */
+function render() {
+  const { year, month } = state;
+  const sal    = getSalary(year, month);
+  const total  = totalGastos(year, month);
+  const liquid = getLiquid(year, month);
+
+  /* Barra de distribuição do salário */
+  document.getElementById('salary-label').textContent  = `Salário líquido: ${fmt(sal)}`;
+  document.getElementById('liquid-label').textContent  = `Líquido: ${liquid < 0 ? '-' : ''}${fmt(liquid)}`;
+  document.getElementById('liquid-label').style.color  = liquid >= 0 ? 'var(--success)' : 'var(--danger)';
+
+  CATEGORIES.forEach(cat => {
+    const w = sal ? Math.min(pct(catTotal(cat.id,year,month), sal), 100) : 0;
+    document.getElementById('bar-' + cat.id).style.width = w.toFixed(1) + '%';
+  });
+
+  /* Cards de métricas */
+  const metrics = [
+    { label:'Salário líquido',   value: sal,    cls:'',         dot:'#888' },
+    { label:'Total gastos',      value: total,  cls:'',         dot:'#D85A30' },
+    { label:'Líquido',           value: liquid, cls: liquid>=0?'positive':'negative', dot: liquid>=0?'#639922':'#E24B4A' },
+    { label:'Investimentos',     value: catTotal('invest',   year,month), cls:'', dot:'var(--invest)' },
+    { label:'Gastos fixos',      value: catTotal('fixed',    year,month), cls:'', dot:'var(--fixed)' },
+    { label:'Gastos variáveis',  value: catTotal('variable', year,month), cls:'', dot:'var(--variable)' },
+    { label:'Reservas',          value: catTotal('reserve',  year,month), cls:'', dot:'var(--reserve)' },
+    { label:'% gasto / salário', value: pct(total,sal),  cls:'', dot:'#888', isPct:true }
+  ];
+
+  document.getElementById('metrics-grid').innerHTML = metrics.map(m => `
+    <div class="metric-card">
+      <div class="metric-label">
+        <span class="metric-dot" style="background:${m.dot}"></span>
+        ${m.label}
+      </div>
+      <div class="metric-value ${m.cls}">
+        ${m.isPct
+          ? m.value.toFixed(1) + '%'
+          : (m.value < 0 ? '-' : '') + fmt(m.value)}
+      </div>
+    </div>`).join('');
+
+  /* Cards de categorias */
+  document.getElementById('categories-grid').innerHTML = CATEGORIES.map(cat => {
+    const catTot = catTotal(cat.id, year, month);
+    const pctSal = pct(catTot, sal);
+    const entries = getEntries(year, month).filter(e => e.catId === cat.id);
+
+    /* Agrupa lançamentos por subcategoria */
+    const bySub = {};
+    cat.subcats.forEach(s => bySub[s] = 0);
+    entries.forEach(e => { bySub[e.subcat] = (bySub[e.subcat] || 0) + e.value; });
+
+    /* Mostra apenas subcats com valor, ou as 4 primeiras se vazio */
+    const rows = cat.subcats.map(s => ({ name: s, value: bySub[s] || 0 }));
+    const hasData = rows.some(r => r.value > 0);
+    const shown   = hasData ? rows.filter(r => r.value > 0) : rows.slice(0, 4);
+
+    return `
+    <div class="cat-card">
+      <div class="cat-header">
+        <div class="cat-title">
+          <span class="cat-badge" style="background:${cat.bg};color:${cat.color}">
+            ${pctSal.toFixed(1)}%
+          </span>
+          ${cat.name}
+        </div>
+        <div class="cat-total" style="color:${cat.color}">${fmt(catTot)}</div>
+      </div>
+      <div class="cat-progress">
+        <div class="cat-progress-fill"
+             style="background:${cat.color}; width:${Math.min(pctSal,100).toFixed(1)}%">
+        </div>
+      </div>
+      <div class="cat-items">
+        ${shown.map(row => `
+          <div class="cat-item" onclick="openEditSubcat('${cat.id}','${row.name}')">
+            <span class="cat-item-name">${row.name}</span>
+            <div class="cat-item-bar">
+              <div class="cat-item-bar-fill"
+                   style="background:${cat.color}; width:${pct(row.value,catTot).toFixed(1)}%">
+              </div>
+            </div>
+            <span class="cat-item-value"
+                  style="color:${row.value > 0 ? cat.color : 'var(--text-3)'}">
+              ${row.value > 0 ? fmt(row.value) : '—'}
+            </span>
+          </div>`).join('')}
+      </div>
+      <button class="cat-add" onclick="openAddModal('${cat.id}')">
+        + adicionar lançamento
+      </button>
+    </div>`;
+  }).join('');
+}
+
+/* ============================================================
+   G. RENDERIZAÇÃO — TABELA ANUAL
+   Gera a tabela com todos os 12 meses por categoria/subcat.
+   ============================================================ */
+function renderAnnual() {
+  const y = state.year;
+
+  /* Cabeçalho: Categoria + meses abreviados + Total */
+  document.getElementById('annual-thead').innerHTML = `<tr>
+    <th style="text-align:left">Categoria</th>
+    ${MONTHS.map(m => `<th>${m.slice(0,3)}</th>`).join('')}
+    <th>Total</th>
+  </tr>`;
+
+  let rows = '';
+
+  /* Linha de salário */
+  const salRow   = MONTHS.map((_,m) => getSalary(y,m));
+  const salTotal = salRow.reduce((a,b) => a+b, 0);
+  rows += `<tr class="cat-row">
+    <td>Salário líquido</td>
+    ${salRow.map(v => `<td>${fmt(v)}</td>`).join('')}
+    <td>${fmt(salTotal)}</td>
+  </tr>`;
+
+  /* Categorias e subcategorias */
+  CATEGORIES.forEach(cat => {
+    const catMonths = MONTHS.map((_,m) => catTotal(cat.id, y, m));
+    const catAnual  = catMonths.reduce((a,b) => a+b, 0);
+
+    rows += `<tr class="cat-row" style="border-top:1.5px solid var(--border)">
+      <td style="color:${cat.color}">${cat.name}</td>
+      ${catMonths.map(v => `<td style="color:${cat.color}">${v > 0 ? fmt(v) : '—'}</td>`).join('')}
+      <td style="color:${cat.color}">${fmt(catAnual)}</td>
+    </tr>`;
+
+    /* Subcategorias: oculta as que não têm nenhum valor no ano */
+    cat.subcats.forEach(sub => {
+      const subMonths = MONTHS.map((_,m) =>
+        getEntries(y,m)
+          .filter(e => e.catId === cat.id && e.subcat === sub)
+          .reduce((a,e) => a + e.value, 0)
+      );
+      const subTotal = subMonths.reduce((a,b) => a+b, 0);
+      if (subTotal === 0) return;
+
+      rows += `<tr>
+        <td style="padding-left:20px; color:var(--text-2)">${sub}</td>
+        ${subMonths.map(v => `<td>${v > 0 ? fmt(v) : '—'}</td>`).join('')}
+        <td>${fmt(subTotal)}</td>
+      </tr>`;
+    });
+  });
+
+  /* Linha de total de gastos */
+  const totMonths = MONTHS.map((_,m) => totalGastos(y,m));
+  const totAnual  = totMonths.reduce((a,b) => a+b, 0);
+  rows += `<tr class="cat-row" style="border-top:2px solid var(--border)">
+    <td>Total gastos</td>
+    ${totMonths.map(v => `<td>${fmt(v)}</td>`).join('')}
+    <td>${fmt(totAnual)}</td>
+  </tr>`;
+
+  /* Linha de líquido */
+  const liqMonths = MONTHS.map((_,m) => getLiquid(y,m));
+  const liqAnual  = liqMonths.reduce((a,b) => a+b, 0);
+  rows += `<tr>
+    <td><strong>Líquido</strong></td>
+    ${liqMonths.map(v => `<td class="${v>=0?'positive':'negative'}">${v<0?'-':''}${fmt(v)}</td>`).join('')}
+    <td class="${liqAnual>=0?'positive':'negative'}">${liqAnual<0?'-':''}${fmt(liqAnual)}</td>
+  </tr>`;
+
+  document.getElementById('annual-tbody').innerHTML = rows;
+}
+
+/* ============================================================
+   H. RENDERIZAÇÃO — GRÁFICOS (Chart.js)
+   Destrói instâncias anteriores antes de recriar,
+   evitando conflito de canvas.
+   ============================================================ */
+function renderCharts() {
+  const { year, month } = state;
+  const sal = getSalary(year, month);
+
+  [chartPie, chartLine, chartBar, chartLiquid].forEach(c => { if(c) c.destroy(); });
+
+  const colors = ['#1D9E75','#534AB7','#D85A30','#185FA5'];
+
+  /* Gráfico 1: Pizza — distribuição mensal */
+  const pieData = CATEGORIES.map(c => catTotal(c.id, year, month));
+  document.getElementById('pie-legend').innerHTML = CATEGORIES.map((c,i) => `
+    <span class="chart-legend-item">
+      <span class="chart-legend-dot" style="background:${colors[i]}"></span>
+      ${c.name.split('/')[0].trim()}: ${fmt(pieData[i])}
+    </span>`).join('');
+
+  chartPie = new Chart(document.getElementById('chart-pie'), {
+    type: 'doughnut',
+    data: {
+      labels: CATEGORIES.map(c => c.name),
+      datasets: [{ data: pieData, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          label: ctx => ` ${fmt(ctx.raw)} (${sal ? pct(ctx.raw,sal).toFixed(1)+'%' : '—'})`
+        }}
+      }
+    }
+  });
+
+  /* Gráfico 2: Linha — evolução anual */
+  document.getElementById('line-legend').innerHTML = CATEGORIES.map((c,i) => `
+    <span class="chart-legend-item">
+      <span class="chart-legend-dot" style="background:${colors[i]}"></span>
+      ${c.name.split('/')[0].trim()}
+    </span>`).join('');
+
+  chartLine = new Chart(document.getElementById('chart-line'), {
+    type: 'line',
+    data: {
+      labels: MONTHS.map(m => m.slice(0,3)),
+      datasets: CATEGORIES.map((cat,i) => ({
+        label: cat.name,
+        data: MONTHS.map((_,m) => catTotal(cat.id, year, m)),
+        borderColor: colors[i],
+        backgroundColor: colors[i] + '22',
+        pointRadius: 3, tension: 0.3, fill: false
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { ticks: { callback: v => 'R$' + v.toLocaleString('pt-BR') }},
+        x: { ticks: { autoSkip: false } }
+      }
+    }
+  });
+
+  /* Gráfico 3: Barras — gastos vs salário */
+  chartBar = new Chart(document.getElementById('chart-bar'), {
+    type: 'bar',
+    data: {
+      labels: MONTHS.map(m => m.slice(0,3)),
+      datasets: [
+        {
+          label: 'Salário',
+          data: MONTHS.map((_,m) => getSalary(year,m)),
+          backgroundColor: '#1D9E7555', borderColor: '#1D9E75', borderWidth: 1
+        },
+        {
+          label: 'Gastos',
+          data: MONTHS.map((_,m) => totalGastos(year,m)),
+          backgroundColor: '#D85A3055', borderColor: '#D85A30', borderWidth: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { boxWidth: 12, font: { size: 11 } } } },
+      scales: {
+        y: { ticks: { callback: v => 'R$' + v.toLocaleString('pt-BR') }},
+        x: { ticks: { autoSkip: false } }
+      }
+    }
+  });
+
+  /* Gráfico 4: Barras — líquido mensal (verde/vermelho) */
+  const liqData = MONTHS.map((_,m) => getLiquid(year,m));
+  chartLiquid = new Chart(document.getElementById('chart-liquid'), {
+    type: 'bar',
+    data: {
+      labels: MONTHS.map(m => m.slice(0,3)),
+      datasets: [{
+        label: 'Líquido',
+        data: liqData,
+        backgroundColor: liqData.map(v => v >= 0 ? '#63992255' : '#E24B4A55'),
+        borderColor:     liqData.map(v => v >= 0 ? '#639922'   : '#E24B4A'),
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { ticks: { callback: v => (v<0?'-':'') + 'R$' + Math.abs(v).toLocaleString('pt-BR') }},
+        x: { ticks: { autoSkip: false } }
+      }
+    }
+  });
+}
+
+/* ============================================================
+   I. MODAL: LANÇAMENTO
+   ============================================================ */
+
+/** Preenche o select de categorias */
+function populateCatSelect() {
+  document.getElementById('entry-cat').innerHTML =
+    CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+}
+
+/** Atualiza subcategorias conforme categoria selecionada */
+function populateSubcats() {
+  const catId = document.getElementById('entry-cat').value;
+  const cat   = CATEGORIES.find(c => c.id === catId);
+  document.getElementById('entry-subcat').innerHTML =
+    cat.subcats.map(s => `<option value="${s}">${s}</option>`).join('');
+}
+
+/** Abre modal para novo lançamento, opcionalmente pré-selecionando categoria */
+function openAddModal(catId = null) {
+  editingEntryId = null;
+  document.getElementById('modal-entry-title').textContent = 'Novo lançamento';
+  document.getElementById('btn-delete-entry').classList.add('hidden');
+  populateCatSelect();
+  if (catId) document.getElementById('entry-cat').value = catId;
+  populateSubcats();
+  document.getElementById('entry-desc').value  = '';
+  document.getElementById('entry-value').value = '';
+  document.getElementById('entry-month').value = state.month;
+  openModal('modal-entry');
+}
+
+/** Abre modal pré-selecionando categoria e subcategoria */
+function openEditSubcat(catId, subcat) {
+  openAddModal(catId);
+  document.getElementById('entry-subcat').value = subcat;
+}
+
+/** Salva novo lançamento ou atualiza existente */
+function saveEntry() {
+  const catId  = document.getElementById('entry-cat').value;
+  const subcat = document.getElementById('entry-subcat').value;
+  const desc   = document.getElementById('entry-desc').value.trim();
+  const value  = parseFloat(document.getElementById('entry-value').value);
+  const month  = parseInt(document.getElementById('entry-month').value);
+
+  if (!value || value <= 0) { showToast('Informe um valor válido.'); return; }
+
+  if (editingEntryId !== null) {
+    /* Edição: localiza pelo ID e substitui */
+    const idx = state.entries.findIndex(e => e.id === editingEntryId);
+    if (idx !== -1) state.entries[idx] = { ...state.entries[idx], catId, subcat, desc, value, month };
+  } else {
+    /* Novo: gera ID único com timestamp + aleatório */
+    state.entries.push({
+      id: Date.now() + Math.random(),
+      year: state.year, month, catId, subcat, desc, value
+    });
+  }
+
+  saveState();
+  closeModal('modal-entry');
+  render();
+  showToast('Lançamento salvo!');
+}
+
+/** Remove o lançamento em edição */
+function deleteEntry() {
+  if (editingEntryId === null) return;
+  state.entries = state.entries.filter(e => e.id !== editingEntryId);
+  saveState();
+  closeModal('modal-entry');
+  render();
+  showToast('Lançamento excluído.');
+}
+
+/* ============================================================
+   J. MODAL: SALÁRIO
+   ============================================================ */
+function openSalaryModal() {
+  document.getElementById('salary-value').value = getSalary(state.year, state.month) || '';
+  openModal('modal-salary');
+}
+
+/** Salva salário para o mês atual ou para todos os meses do ano */
+function saveSalary() {
+  const value = parseFloat(document.getElementById('salary-value').value);
+  const scope = document.getElementById('salary-scope').value;
+  if (!value || value < 0) { showToast('Informe um valor válido.'); return; }
+
+  if (!state.salary[state.year]) state.salary[state.year] = {};
+
+  if (scope === 'year') {
+    MONTHS.forEach((_,m) => { state.salary[state.year][m] = value; });
+  } else {
+    state.salary[state.year][state.month] = value;
+  }
+
+  saveState();
+  closeModal('modal-salary');
+  render();
+  showToast('Salário atualizado!');
+}
+
+/* ============================================================
+   K. UTILITÁRIOS
+   ============================================================ */
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+/* Fecha modal ao clicar fora dele */
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+/** Exibe mensagem temporária de feedback (2,2 segundos) */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ============================================================
+   L. INICIALIZAÇÃO
+   Sequência de boot da aplicação.
+   ============================================================ */
+function init() {
+  loadState();        // 1. Recupera dados do localStorage
+  buildSelectors();   // 2. Monta seletores de mês/ano
+  populateCatSelect();// 3. Popula categorias nos modais
+  populateSubcats();  // 4. Popula subcategorias
+  render();           // 5. Renderiza dashboard inicial
+}
+
+init();
+</script>
+</body>
+</html>
