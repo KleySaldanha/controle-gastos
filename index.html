@@ -733,6 +733,12 @@ const CATEGORIES = [
     name: 'Investimentos',
     color: 'var(--invest)',
     bg: 'var(--invest-bg)',
+    /*
+     * isExpense: false — Investimentos NÃO entram no cálculo de gastos.
+     * São alocações de patrimônio e aparecem separados no dashboard.
+     * Para incluir uma categoria nos gastos, defina isExpense: true.
+     */
+    isExpense: false,
     subcats: [
       'Porquinho Nubank','XP Investimentos','Clear Corretora',
       'Mercado Bitcoin','Pagbank','Caixinhas/Poupança'
@@ -743,6 +749,7 @@ const CATEGORIES = [
     name: 'Gastos Fixos/Essências',
     color: 'var(--fixed)',
     bg: 'var(--fixed-bg)',
+    isExpense: true,  // compõe o total de gastos
     subcats: [
       'Energia','Internet Móvel','Internet Fibra','Saúde',
       'Plano de Saúde Pietra','IPVA','Gastos Carro','MEI',
@@ -754,6 +761,7 @@ const CATEGORIES = [
     name: 'Gastos Variáveis',
     color: 'var(--variable)',
     bg: 'var(--variable-bg)',
+    isExpense: true,  // compõe o total de gastos
     subcats: [
       'Taxa CC','Cartão Itaú','Lazer','Férias','Gastos Pietra',
       'Juquinha','Seguro de vida','Pessoal','Lavagem Carro'
@@ -764,6 +772,7 @@ const CATEGORIES = [
     name: 'Reserva Financeira/Objetivos',
     color: 'var(--reserve)',
     bg: 'var(--reserve-bg)',
+    isExpense: false, // reservas também não são gastos — são objetivos futuros
     subcats: [
       'Imóvel','Carro','Poupança Pietra','Moto','Itens de Casa',
       'Estudos','Emergencia','Aposentadoria','Investimentos','Emp. Contas Invest'
@@ -830,8 +839,21 @@ function catTotal(catId, year, month) {
     .reduce((acc, e) => acc + e.value, 0);
 }
 
-/** Soma todos os gastos de todas as categorias num mês/ano */
+/**
+ * Soma apenas as categorias marcadas com isExpense: true.
+ * Investimentos e Reservas são excluídos por terem isExpense: false.
+ */
 function totalGastos(year, month) {
+  return CATEGORIES
+    .filter(cat => cat.isExpense)
+    .reduce((acc, cat) => acc + catTotal(cat.id, year, month), 0);
+}
+
+/**
+ * Soma todas as categorias independente de isExpense.
+ * Usado para mostrar o total geral de alocações (gastos + investimentos + reservas).
+ */
+function totalAlocado(year, month) {
   return CATEGORIES.reduce((acc, cat) => acc + catTotal(cat.id, year, month), 0);
 }
 
@@ -927,22 +949,29 @@ function render() {
   });
 
   /* Cards de métricas */
+  const totalInvest  = catTotal('invest',   year, month);
+  const totalReserve = catTotal('reserve',  year, month);
   const metrics = [
-    { label:'Salário líquido',   value: sal,    cls:'',         dot:'#888' },
-    { label:'Total gastos',      value: total,  cls:'',         dot:'#D85A30' },
-    { label:'Líquido',           value: liquid, cls: liquid>=0?'positive':'negative', dot: liquid>=0?'#639922':'#E24B4A' },
-    { label:'Investimentos',     value: catTotal('invest',   year,month), cls:'', dot:'var(--invest)' },
-    { label:'Gastos fixos',      value: catTotal('fixed',    year,month), cls:'', dot:'var(--fixed)' },
-    { label:'Gastos variáveis',  value: catTotal('variable', year,month), cls:'', dot:'var(--variable)' },
-    { label:'Reservas',          value: catTotal('reserve',  year,month), cls:'', dot:'var(--reserve)' },
-    { label:'% gasto / salário', value: pct(total,sal),  cls:'', dot:'#888', isPct:true }
+    { label:'Salário líquido',    value: sal,          cls:'',         dot:'#888' },
+    { label:'Total gastos',       value: total,        cls:'',         dot:'#D85A30',
+      tip:'Apenas Fixos + Variáveis' },
+    { label:'Líquido',            value: liquid,       cls: liquid>=0?'positive':'negative',
+      dot: liquid>=0?'#639922':'#E24B4A' },
+    { label:'Investimentos',      value: totalInvest,  cls:'', dot:'var(--invest)',
+      tip:'Não entra nos gastos' },
+    { label:'Gastos fixos',       value: catTotal('fixed',    year,month), cls:'', dot:'var(--fixed)' },
+    { label:'Gastos variáveis',   value: catTotal('variable', year,month), cls:'', dot:'var(--variable)' },
+    { label:'Reservas/Objetivos', value: totalReserve, cls:'', dot:'var(--reserve)',
+      tip:'Não entra nos gastos' },
+    { label:'% gasto / salário',  value: pct(total,sal), cls:'', dot:'#888', isPct:true,
+      tip:'Fixos + Variáveis ÷ Salário' }
   ];
 
   document.getElementById('metrics-grid').innerHTML = metrics.map(m => `
-    <div class="metric-card">
+    <div class="metric-card" ${m.tip ? `title="${m.tip}"` : ''}>
       <div class="metric-label">
         <span class="metric-dot" style="background:${m.dot}"></span>
-        ${m.label}
+        ${m.label}${m.tip ? ' ℹ️' : ''}
       </div>
       <div class="metric-value ${m.cls}">
         ${m.isPct
@@ -1059,11 +1088,11 @@ function renderAnnual() {
     });
   });
 
-  /* Linha de total de gastos */
+  /* Linha de total de gastos (apenas categorias isExpense: true) */
   const totMonths = MONTHS.map((_,m) => totalGastos(y,m));
   const totAnual  = totMonths.reduce((a,b) => a+b, 0);
   rows += `<tr class="cat-row" style="border-top:2px solid var(--border)">
-    <td>Total gastos</td>
+    <td>Total gastos (Fixos + Variáveis)</td>
     ${totMonths.map(v => `<td>${fmt(v)}</td>`).join('')}
     <td>${fmt(totAnual)}</td>
   </tr>`;
@@ -1159,9 +1188,17 @@ function renderCharts() {
           backgroundColor: '#1D9E7555', borderColor: '#1D9E75', borderWidth: 1
         },
         {
-          label: 'Gastos',
+          /* Gastos = apenas Fixos + Variáveis (isExpense: true) */
+          label: 'Gastos (Fixos + Variáveis)',
           data: MONTHS.map((_,m) => totalGastos(year,m)),
           backgroundColor: '#D85A3055', borderColor: '#D85A30', borderWidth: 1
+        },
+        {
+          /* Alocado = Gastos + Investimentos + Reservas */
+          label: 'Total alocado',
+          data: MONTHS.map((_,m) => totalAlocado(year,m)),
+          backgroundColor: '#88888822', borderColor: '#888888', borderWidth: 1,
+          borderDash: [4,3]
         }
       ]
     },
