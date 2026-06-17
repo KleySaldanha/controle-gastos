@@ -34,12 +34,12 @@ function renderMetrics(sal, total, liquid, isAllMonths, year, month) {
 
   const metrics = [
     { label: 'Salário líquido',    value: sal,    cls: '',  dot: '#888' },
-    { label: 'Total gastos',       value: total,  cls: '',  dot: '#D85A30', tip: 'Apenas Fixos + Variáveis' },
+    { label: 'Total gastos',       value: total,  cls: '',  dot: '#D85A30', tip: 'Fixos + Variáveis + Reservas/Objetivos' },
     { label: 'Líquido',            value: liquid, cls: liquid >= 0 ? 'positive' : 'negative', dot: liquid >= 0 ? '#639922' : '#E24B4A' },
     { label: 'Investimentos',      value: totalInvest,  cls: '', dot: 'var(--invest)',   tip: 'Não entra nos gastos' },
     { label: 'Gastos fixos',       value: catTotal('fixed',    year, month), cls: '', dot: 'var(--fixed)' },
     { label: 'Gastos variáveis',   value: catTotal('variable', year, month), cls: '', dot: 'var(--variable)' },
-    { label: 'Reservas/Objetivos', value: totalReserve, cls: '', dot: 'var(--reserve)',  tip: 'Não entra nos gastos' },
+    { label: 'Reservas/Objetivos', value: totalReserve, cls: '', dot: 'var(--reserve)' },
     { label: isAllMonths ? '% gasto / salário anual' : '% gasto / salário', value: pct(total, sal), cls: '', dot: '#888', isPct: true,
       tip: isAllMonths ? 'Fixos + Variáveis ÷ Salário anual' : 'Fixos + Variáveis ÷ Salário' },
   ];
@@ -162,7 +162,7 @@ export function renderAnnual() {
   const totMonths = MONTHS.map((_, m) => totalGastos(y, m));
   const totAnual  = totMonths.reduce((a, b) => a + b, 0);
   rows += `<tr class="cat-row" style="border-top:2px solid var(--border)">
-    <td>Total gastos (Fixos + Variáveis)</td>
+    <td>Total gastos (Fixos + Variáveis + Reservas)</td>
     ${totMonths.map(v => `<td>${fmt(v)}</td>`).join('')}
     <td>${fmt(totAnual)}</td>
   </tr>`;
