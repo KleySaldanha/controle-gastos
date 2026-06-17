@@ -1,0 +1,516 @@
+/*
+ * ================================================================
+ * styles.css — Estilos globais do Controle de Gastos
+ * ================================================================
+ * Organização:
+ *   1.  Reset & Design Tokens
+ *   2.  Layout principal
+ *   3.  Cabeçalho
+ *   4.  Navegação por abas
+ *   5.  Cards de métricas
+ *   6.  Barra de distribuição do salário
+ *   7.  Cards de categoria
+ *   8.  Tabela anual
+ *   9.  Gráficos
+ *   10. Modais
+ *   11. Botões
+ *   12. Toast de feedback
+ *   13. Modal de lançamentos da subcategoria
+ *   14. Responsividade (mobile-first)
+ * ================================================================
+ */
+
+
+/* ============================================================
+   1. RESET & DESIGN TOKENS
+   Centraliza todas as cores e medidas em variáveis CSS,
+   facilitando customizações e suporte automático a dark mode.
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Superfícies */
+  --bg:        #F5F5F3;
+  --surface:   #FFFFFF;
+  --surface-2: #F0F0ED;
+
+  /* Bordas */
+  --border:    rgba(0,0,0,0.10);
+  --border-md: rgba(0,0,0,0.20);
+
+  /* Texto */
+  --text:   #1A1A18;
+  --text-2: #5F5E5A;
+  --text-3: #B4B2A9;
+
+  /* Raios de borda */
+  --radius:    8px;
+  --radius-lg: 12px;
+
+  /* Paleta semântica das 4 categorias financeiras */
+  --invest:      #1D9E75;   /* teal   — investimentos */
+  --invest-bg:   #E1F5EE;
+  --fixed:       #534AB7;   /* purple — gastos fixos */
+  --fixed-bg:    #EEEDFE;
+  --variable:    #D85A30;   /* coral  — gastos variáveis */
+  --variable-bg: #FAECE7;
+  --reserve:     #185FA5;   /* blue   — reservas/objetivos */
+  --reserve-bg:  #E6F1FB;
+
+  /* Semântica de status */
+  --success: #639922;
+  --danger:  #E24B4A;
+}
+
+/* Dark mode — ativa automaticamente via preferência do sistema */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:        #1C1C1A;
+    --surface:   #2C2C2A;
+    --surface-2: #383836;
+    --border:    rgba(255,255,255,0.10);
+    --border-md: rgba(255,255,255,0.20);
+    --text:      #F1EFE8;
+    --text-2:    #B4B2A9;
+    --text-3:    #5F5E5A;
+  }
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+
+/* ============================================================
+   2. LAYOUT PRINCIPAL
+   ============================================================ */
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* Área de conteúdo centralizada e com padding */
+.main {
+  padding: 20px;
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Título de seção em caixa alta */
+.section-title {
+  font-size: 12px; font-weight: 600; color: var(--text-2);
+  margin-bottom: 10px; margin-top: 20px;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+.hidden { display: none !important; }
+
+
+/* ============================================================
+   3. CABEÇALHO
+   Fixo no topo com controles de mês/ano e acesso ao salário.
+   ============================================================ */
+.header {
+  background: var(--surface);
+  border-bottom: 0.5px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+
+/* Ícone quadrado com emoji */
+.header-logo {
+  width: 32px; height: 32px;
+  background: var(--invest);
+  border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 18px;
+}
+.header-title    { font-size: 15px; font-weight: 600; }
+.header-subtitle { font-size: 12px; color: var(--text-2); }
+.header-right    { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* Grupo de label + select (ex: "Mês [select]") */
+.select-group { display: flex; align-items: center; gap: 6px; }
+.select-group label { font-size: 12px; color: var(--text-2); }
+
+select {
+  background: var(--surface-2);
+  border: 0.5px solid var(--border-md);
+  border-radius: var(--radius);
+  padding: 5px 8px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+
+/* ============================================================
+   4. NAVEGAÇÃO POR ABAS
+   ============================================================ */
+.nav {
+  background: var(--surface);
+  border-bottom: 0.5px solid var(--border);
+  padding: 0 20px;
+  display: flex;
+  overflow-x: auto; /* scroll horizontal em telas pequenas */
+}
+.nav-tab {
+  padding: 10px 16px;
+  font-size: 13px;
+  color: var(--text-2);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  background: none;
+  border-top: none; border-left: none; border-right: none;
+  transition: color 0.15s, border-color 0.15s;
+}
+.nav-tab:hover { color: var(--text); }
+.nav-tab.active {
+  color: var(--invest);
+  border-bottom-color: var(--invest);
+  font-weight: 600;
+}
+
+
+/* ============================================================
+   5. CARDS DE MÉTRICAS
+   Grade de 8 cards com valor numérico e rótulo colorido.
+   ============================================================ */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.metric-card {
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+.metric-label {
+  font-size: 12px; color: var(--text-2);
+  margin-bottom: 4px;
+  display: flex; align-items: center; gap: 4px;
+}
+/* Bolinha colorida que identifica a categoria */
+.metric-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.metric-value { font-size: 20px; font-weight: 600; }
+.metric-value.positive { color: var(--success); }
+.metric-value.negative { color: var(--danger); }
+
+
+/* ============================================================
+   6. BARRA DE DISTRIBUIÇÃO DO SALÁRIO
+   Barra horizontal proporcional dividida por categoria.
+   ============================================================ */
+.salary-bar-wrap {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+.salary-bar-label {
+  display: flex; justify-content: space-between;
+  font-size: 13px; margin-bottom: 8px;
+}
+.salary-bar-track {
+  height: 10px;
+  background: var(--surface-2);
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex; gap: 2px;
+}
+/* Cada segmento tem width definido dinamicamente via JS */
+.salary-bar-seg { height: 100%; transition: width 0.4s ease; }
+
+/* Legenda de cores usada em barra e gráficos */
+.chart-legend {
+  display: flex; flex-wrap: wrap;
+  gap: 10px; margin-top: 8px;
+}
+.chart-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-2); }
+.chart-legend-dot  { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+
+/* ============================================================
+   7. CARDS DE CATEGORIA
+   Card com cabeçalho, barra de progresso e lista de subcats.
+   ============================================================ */
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px; margin-bottom: 20px;
+}
+.cat-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.cat-header {
+  padding: 12px 14px 10px;
+  border-bottom: 0.5px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.cat-title  { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+.cat-badge  { font-size: 11px; padding: 2px 7px; border-radius: 999px; font-weight: 600; }
+.cat-total  { font-size: 15px; font-weight: 600; }
+
+/* Barra de progresso fina abaixo do cabeçalho */
+.cat-progress      { height: 3px; background: var(--border); margin: 0 14px 2px; }
+.cat-progress-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+
+/* Lista de itens (subcategorias) dentro do card */
+.cat-items { padding: 6px 0; }
+.cat-item {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 5px 14px; gap: 8px;
+  cursor: pointer; transition: background 0.1s;
+}
+.cat-item:hover { background: var(--surface-2); }
+.cat-item-name  { font-size: 13px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cat-item-value { font-size: 13px; font-weight: 600; white-space: nowrap; }
+
+/* Mini barra de proporção dentro de cada subcategoria */
+.cat-item-bar      { width: 60px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; flex-shrink: 0; }
+.cat-item-bar-fill { height: 100%; border-radius: 2px; }
+
+/* Botão de adicionar lançamento no rodapé do card */
+.cat-add {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px; font-size: 12px; color: var(--text-3);
+  cursor: pointer; border-top: 0.5px solid var(--border);
+  margin-top: 4px; background: none;
+  border-left: none; border-right: none; border-bottom: none;
+  width: 100%; text-align: left; transition: color 0.15s;
+}
+.cat-add:hover { color: var(--text-2); }
+
+
+/* ============================================================
+   8. TABELA ANUAL
+   Tabela responsiva com scroll horizontal, colunas fixas.
+   ============================================================ */
+.table-wrap { overflow-x: auto; }
+
+table.annual {
+  width: 100%; border-collapse: collapse;
+  font-size: 12px; min-width: 700px;
+}
+table.annual th,
+table.annual td {
+  padding: 7px 10px;
+  border-bottom: 0.5px solid var(--border);
+  white-space: nowrap;
+}
+table.annual th {
+  background: var(--surface-2); color: var(--text-2);
+  font-weight: 600; text-align: right;
+  position: sticky; top: 0; /* header fixo ao rolar */
+}
+/* Primeira coluna (nome da categoria) fica fixa ao rolar horizontalmente */
+table.annual th:first-child,
+table.annual td:first-child {
+  text-align: left; position: sticky; left: 0;
+  background: var(--surface); z-index: 1;
+}
+table.annual th:first-child { background: var(--surface-2); }
+
+/* Linhas de categoria têm fundo diferenciado */
+table.annual tr.cat-row td { font-weight: 600; background: var(--surface-2); }
+table.annual td { text-align: right; }
+table.annual td.negative { color: var(--danger); }
+table.annual td.positive { color: var(--success); }
+table.annual tr:hover td { background: var(--surface-2); }
+
+
+/* ============================================================
+   9. GRÁFICOS
+   Grid de cards para os canvas do Chart.js.
+   ============================================================ */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 12px; margin-bottom: 20px;
+}
+.chart-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+.chart-card-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+
+
+/* ============================================================
+   10. MODAIS
+   Overlay escuro + painel centralizado.
+   ============================================================ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4); z-index: 200;
+  align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; } /* aberto via JS */
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 0.5px solid var(--border);
+  width: 100%; max-width: 420px;
+  max-height: 90vh; overflow-y: auto;
+}
+.modal-header {
+  padding: 16px 20px 12px;
+  border-bottom: 0.5px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-title { font-size: 15px; font-weight: 600; }
+.modal-close {
+  background: none; border: none; color: var(--text-2);
+  cursor: pointer; font-size: 20px; line-height: 1;
+}
+.modal-body   { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+.modal-footer {
+  padding: 12px 20px 16px;
+  border-top: 0.5px solid var(--border);
+  display: flex; gap: 8px; justify-content: flex-end;
+}
+
+/* Campos de formulário dentro dos modais */
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 12px; color: var(--text-2); font-weight: 600; }
+
+input[type="text"],
+input[type="number"],
+select {
+  width: 100%; background: var(--surface-2);
+  border: 0.5px solid var(--border-md);
+  border-radius: var(--radius);
+  padding: 7px 10px; font-size: 13px; color: var(--text);
+}
+input:focus, select:focus {
+  outline: none; border-color: var(--invest);
+  box-shadow: 0 0 0 2px rgba(29,158,117,0.15);
+}
+
+
+/* ============================================================
+   11. BOTÕES
+   ============================================================ */
+.btn {
+  padding: 7px 16px; border-radius: var(--radius);
+  font-size: 13px; cursor: pointer;
+  border: 0.5px solid var(--border-md);
+  background: none; color: var(--text);
+  transition: background 0.15s;
+}
+.btn:hover      { background: var(--surface-2); }
+.btn-primary    { background: var(--invest); color: #fff; border-color: var(--invest); font-weight: 600; }
+.btn-primary:hover { background: #0F6E56; border-color: #0F6E56; }
+.btn-danger     { color: var(--danger); border-color: var(--danger); }
+.btn-danger:hover { background: #FCEBEB; }
+
+/* Botão de ação flutuante (FAB) — canto inferior direito */
+.fab {
+  position: fixed; bottom: 24px; right: 24px;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--invest); color: #fff;
+  border: none; font-size: 28px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  z-index: 150; transition: background 0.15s, transform 0.1s;
+}
+.fab:hover  { background: #0F6E56; transform: scale(1.05); }
+.fab:active { transform: scale(0.96); }
+
+/* Botão ícone pequeno (editar/excluir dentro de listas) */
+.btn-icon {
+  width: 30px; height: 30px;
+  border-radius: var(--radius);
+  border: 0.5px solid var(--border-md);
+  background: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: var(--text-2);
+  transition: background 0.15s, color 0.15s;
+}
+.btn-icon:hover       { background: var(--surface); color: var(--text); }
+.btn-icon.danger:hover { background: #FCEBEB; color: var(--danger); border-color: var(--danger); }
+
+
+/* ============================================================
+   12. TOAST DE FEEDBACK
+   Mensagem temporária que aparece no canto inferior direito.
+   ============================================================ */
+.toast {
+  position: fixed; bottom: 84px; right: 20px;
+  background: #2C2C2A; color: #fff;
+  padding: 9px 16px; border-radius: var(--radius);
+  font-size: 13px; opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 300; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+
+
+/* ============================================================
+   13. MODAL DE LANÇAMENTOS DA SUBCATEGORIA
+   Lista cada lançamento com descrição, valor e ações.
+   ============================================================ */
+.subcat-modal-total { font-size: 12px; color: var(--text-2); }
+
+/* Lista vertical de lançamentos */
+.entries-list { display: flex; flex-direction: column; gap: 6px; }
+
+/* Linha de um lançamento individual */
+.entry-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  border: 0.5px solid var(--border);
+}
+.entry-row-info  { flex: 1; min-width: 0; }
+.entry-row-desc  {
+  font-size: 13px; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.entry-row-desc.no-desc { color: var(--text-3); font-style: italic; }
+.entry-row-meta  { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+.entry-row-value { font-size: 14px; font-weight: 600; white-space: nowrap; }
+.entry-row-actions { display: flex; gap: 4px; }
+
+/* Mensagem de lista vazia */
+.entries-empty {
+  text-align: center; padding: 24px 0;
+  color: var(--text-3); font-size: 13px;
+}
+
+
+/* ============================================================
+   14. RESPONSIVIDADE (mobile-first)
+   Ajustes para telas menores que 600px (smartphones).
+   ============================================================ */
+@media (max-width: 600px) {
+  .header          { padding: 10px 14px; }
+  .main            { padding: 12px; }
+  .metrics-grid    { grid-template-columns: repeat(2, 1fr); }
+  .categories-grid { grid-template-columns: 1fr; }
+  .charts-grid     { grid-template-columns: 1fr; }
+}
