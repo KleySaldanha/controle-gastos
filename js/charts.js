@@ -1,39 +1,15 @@
-/**
- * charts.js — Renderização dos gráficos (Chart.js)
- * =========================================================
- * Gerencia os 5 gráficos da aba "Gráficos":
- *   1. Pizza       — distribuição mensal por categoria
- *   2. Linha       — evolução anual por categoria
- *   3. Barras      — gastos vs salário (mensal)
- *   4. Barras      — líquido mensal (sobra / déficit)
- *   5. Linha dupla — evolução acumulada dos investimentos + %
- *
- * Padrão: cada gráfico é destruído antes de ser recriado,
- * evitando conflito de instâncias no mesmo <canvas>.
- *
- * Depende de: config.js, state.js, finance.js, Chart.js (CDN)
- * =========================================================
- */
+import Chart from 'chart.js/auto';
+import { CATEGORIES, MONTHS, CHART_COLORS } from './config.js';
+import { state, getSalary } from './state.js';
+import { catTotal, totalGastos, totalAlocado, getLiquid, getInvestAccum, getInvestGrowthPct, pct, fmt } from './finance.js';
 
-'use strict';
-
-/* ── Referências das instâncias Chart.js ── */
 let chartPie    = null;
 let chartLine   = null;
 let chartBar    = null;
 let chartLiquid = null;
 let chartInvest = null;
 
-/* ============================================================
-   PONTO DE ENTRADA
-   ============================================================ */
-
-/**
- * Destrói todos os gráficos existentes e os recria com os
- * dados do mês/ano atualmente selecionado.
- * Chamado ao abrir a aba "Gráficos" ou após mudança de período.
- */
-function renderCharts() {
+export function renderCharts() {
   destroyAllCharts();
 
   const { year, month } = state;
@@ -46,47 +22,23 @@ function renderCharts() {
   renderInvestChart(year);
 }
 
-/* ============================================================
-   HELPERS INTERNOS
-   ============================================================ */
-
-/** Destrói todas as instâncias de gráfico para liberar canvas */
 function destroyAllCharts() {
   [chartPie, chartLine, chartBar, chartLiquid, chartInvest].forEach(c => {
     if (c) c.destroy();
   });
 }
 
-/**
- * Opções comuns reutilizadas por todos os gráficos.
- * @returns {Object}
- */
 function commonOptions() {
   return { responsive: true, maintainAspectRatio: false };
 }
 
-/**
- * Callback de tick para eixo Y em reais.
- * @param {number} v
- * @returns {string}
- */
 function tickBRL(v) {
   return 'R$' + v.toLocaleString('pt-BR');
 }
 
-/* ============================================================
-   GRÁFICO 1 — PIZZA: distribuição mensal por categoria
-   ============================================================ */
-
-/**
- * @param {number} year
- * @param {number} month
- * @param {number} sal — usado no tooltip para calcular %
- */
 function renderPieChart(year, month, sal) {
   const pieData = CATEGORIES.map(c => catTotal(c.id, year, month));
 
-  /* Legenda manual abaixo do título */
   document.getElementById('pie-legend').innerHTML = CATEGORIES.map((c, i) => `
     <span class="chart-legend-item">
       <span class="chart-legend-dot" style="background:${CHART_COLORS[i]}"></span>
@@ -110,7 +62,6 @@ function renderPieChart(year, month, sal) {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            /* Exibe valor + percentual em relação ao salário */
             label: ctx => ` ${fmt(ctx.raw)} (${sal ? pct(ctx.raw, sal).toFixed(1) + '%' : '—'})`,
           },
         },
@@ -119,13 +70,6 @@ function renderPieChart(year, month, sal) {
   });
 }
 
-/* ============================================================
-   GRÁFICO 2 — LINHA: evolução anual por categoria
-   ============================================================ */
-
-/**
- * @param {number} year
- */
 function renderLineChart(year) {
   document.getElementById('line-legend').innerHTML = CATEGORIES.map((c, i) => `
     <span class="chart-legend-item">
@@ -158,14 +102,6 @@ function renderLineChart(year) {
   });
 }
 
-/* ============================================================
-   GRÁFICO 3 — BARRAS: gastos vs salário (mensal)
-   ============================================================ */
-
-/**
- * Compara salário, gastos (isExpense) e total alocado mês a mês.
- * @param {number} year
- */
 function renderBarChart(year) {
   chartBar = new Chart(document.getElementById('chart-bar'), {
     type: 'bar',
@@ -180,7 +116,6 @@ function renderBarChart(year) {
           borderWidth: 1,
         },
         {
-          /* Gastos = apenas categorias com isExpense: true */
           label: 'Gastos (Fixos + Variáveis)',
           data: MONTHS.map((_, m) => totalGastos(year, m)),
           backgroundColor: '#D85A3055',
@@ -188,7 +123,6 @@ function renderBarChart(year) {
           borderWidth: 1,
         },
         {
-          /* Alocado = gastos + investimentos + reservas */
           label: 'Total alocado',
           data: MONTHS.map((_, m) => totalAlocado(year, m)),
           backgroundColor: '#88888822',
@@ -209,14 +143,6 @@ function renderBarChart(year) {
   });
 }
 
-/* ============================================================
-   GRÁFICO 4 — BARRAS: líquido mensal (sobra / déficit)
-   ============================================================ */
-
-/**
- * Barras verdes para sobra, vermelhas para déficit.
- * @param {number} year
- */
 function renderLiquidChart(year) {
   const liqData = MONTHS.map((_, m) => getLiquid(year, m));
 
@@ -243,20 +169,10 @@ function renderLiquidChart(year) {
   });
 }
 
-/* ============================================================
-   GRÁFICO 5 — LINHA DUPLA: evolução acumulada dos investimentos
-   Eixo esquerdo: valor acumulado em R$
-   Eixo direito:  variação percentual mês a mês
-   ============================================================ */
-
-/**
- * @param {number} year
- */
 function renderInvestChart(year) {
   const accum     = getInvestAccum(year);
   const growthPct = getInvestGrowthPct(accum);
 
-  /* Cálculo de média de crescimento para a legenda */
   const totalAccum = accum[accum.length - 1];
   const validG     = growthPct.filter(v => v !== null);
   const avgGrowth  = validG.length
