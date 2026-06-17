@@ -601,6 +601,19 @@ input:focus, select:focus {
         </div>
       </div>
 
+      <!-- Evolução acumulada de investimentos (linha + % de crescimento) -->
+      <div class="chart-card" style="grid-column: 1 / -1">
+        <div class="chart-card-title">Evolução acumulada dos investimentos</div>
+        <div id="invest-legend" class="chart-legend" style="margin-bottom:10px"></div>
+        <div style="position:relative; height:280px">
+          <canvas id="chart-invest"
+            role="img"
+            aria-label="Gráfico de linha com evolução acumulada dos investimentos e percentual de crescimento mês a mês">
+            Evolução acumulada dos investimentos.
+          </canvas>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -808,7 +821,7 @@ let state = {
 };
 
 let editingEntryId = null; // ID do lançamento em edição (null = novo)
-let chartPie = null, chartLine = null, chartBar = null, chartLiquid = null;
+let chartPie = null, chartLine = null, chartBar = null, chartLiquid = null, chartInvest = null;
 
 /* ── Persistência ── */
 function saveState() {
@@ -827,8 +840,12 @@ function loadState() {
    Não modificam o estado — apenas leem e calculam.
    ============================================================ */
 
-/** Filtra lançamentos por ano e mês */
+/**
+ * Filtra lançamentos por ano e mês.
+ * month = -1 retorna todos os meses do ano (modo "Todos os meses").
+ */
 function getEntries(year, month) {
+  if (month === -1) return state.entries.filter(e => e.year === year);
   return state.entries.filter(e => e.year === year && e.month === month);
 }
 
@@ -857,8 +874,15 @@ function totalAlocado(year, month) {
   return CATEGORIES.reduce((acc, cat) => acc + catTotal(cat.id, year, month), 0);
 }
 
-/** Retorna o salário cadastrado para um mês/ano (0 se não definido) */
+/**
+ * Retorna o salário cadastrado para um mês/ano.
+ * month = -1 soma todos os meses do ano.
+ */
 function getSalary(year, month) {
+  if (month === -1) {
+    if (!state.salary[year]) return 0;
+    return Object.values(state.salary[year]).reduce((a,b) => a+b, 0);
+  }
   return (state.salary[year] && state.salary[year][month]) || 0;
 }
 
@@ -890,9 +914,9 @@ function buildSelectors() {
   const sy = document.getElementById('sel-year');
   const em = document.getElementById('entry-month');
 
-  /* Popula seletor de meses */
-  sm.innerHTML = MONTHS.map((m,i) =>
-    `<option value="${i}">${m}</option>`).join('');
+  /* Popula seletor de meses — valor -1 = todos os meses */
+  sm.innerHTML = '<option value="-1">Todos os meses</option>' +
+    MONTHS.map((m,i) => `<option value="${i}">${m}</option>`).join('');
   sm.value = state.month;
   sm.onchange = () => { state.month = +sm.value; saveState(); render(); };
 
@@ -939,11 +963,14 @@ function render() {
   const liquid = getLiquid(year, month);
 
   /* Barra de distribuição do salário */
-  document.getElementById('salary-label').textContent  = `Salário líquido: ${fmt(sal)}`;
+  const isAllMonths = month === -1;
+  document.getElementById('salary-label').textContent  =
+    isAllMonths ? `Salário anual: ${fmt(sal)}` : `Salário líquido: ${fmt(sal)}`;
   document.getElementById('liquid-label').textContent  = `Líquido: ${liquid < 0 ? '-' : ''}${fmt(liquid)}`;
   document.getElementById('liquid-label').style.color  = liquid >= 0 ? 'var(--success)' : 'var(--danger)';
 
   CATEGORIES.forEach(cat => {
+    /* Quando todos os meses, compara contra a soma anual do salário */
     const w = sal ? Math.min(pct(catTotal(cat.id,year,month), sal), 100) : 0;
     document.getElementById('bar-' + cat.id).style.width = w.toFixed(1) + '%';
   });
@@ -963,8 +990,9 @@ function render() {
     { label:'Gastos variáveis',   value: catTotal('variable', year,month), cls:'', dot:'var(--variable)' },
     { label:'Reservas/Objetivos', value: totalReserve, cls:'', dot:'var(--reserve)',
       tip:'Não entra nos gastos' },
-    { label:'% gasto / salário',  value: pct(total,sal), cls:'', dot:'#888', isPct:true,
-      tip:'Fixos + Variáveis ÷ Salário' }
+    { label: isAllMonths ? '% gasto / salário anual' : '% gasto / salário',
+      value: pct(total,sal), cls:'', dot:'#888', isPct:true,
+      tip: isAllMonths ? 'Fixos + Variáveis ÷ Salário anual' : 'Fixos + Variáveis ÷ Salário' }
   ];
 
   document.getElementById('metrics-grid').innerHTML = metrics.map(m => `
@@ -1118,7 +1146,7 @@ function renderCharts() {
   const { year, month } = state;
   const sal = getSalary(year, month);
 
-  [chartPie, chartLine, chartBar, chartLiquid].forEach(c => { if(c) c.destroy(); });
+  [chartPie, chartLine, chartBar, chartLiquid, chartInvest].forEach(c => { if(c) c.destroy(); });
 
   const colors = ['#1D9E75','#534AB7','#D85A30','#185FA5'];
 
@@ -1231,6 +1259,95 @@ function renderCharts() {
       plugins: { legend: { display: false } },
       scales: {
         y: { ticks: { callback: v => (v<0?'-':'') + 'R$' + Math.abs(v).toLocaleString('pt-BR') }},
+        x: { ticks: { autoSkip: false } }
+      }
+    }
+  });
+
+  /* ── Gráfico 5: Linha — evolução acumulada dos investimentos ──
+     Mostra o total acumulado mês a mês e o percentual de crescimento
+     em relação ao mês anterior. Usa eixo Y duplo:
+       - esquerda: valor em R$
+       - direita:  variação % mês a mês
+  ── */
+  const investMonthly    = MONTHS.map((_,m) => catTotal('invest', year, m));
+  const investAccum      = investMonthly.map((_, i) =>
+    investMonthly.slice(0, i + 1).reduce((a, b) => a + b, 0)
+  );
+  /* Variação % mês a mês: ((acum[i] - acum[i-1]) / acum[i-1]) * 100 */
+  const investGrowthPct  = investAccum.map((v, i) => {
+    if (i === 0 || investAccum[i-1] === 0) return null;
+    return +((( v - investAccum[i-1]) / investAccum[i-1]) * 100).toFixed(2);
+  });
+
+  /* Legenda dinâmica com total acumulado e crescimento médio */
+  const totalInvestAnual = investAccum[investAccum.length - 1];
+  const validGrowths     = investGrowthPct.filter(v => v !== null);
+  const avgGrowth        = validGrowths.length
+    ? (validGrowths.reduce((a,b) => a+b, 0) / validGrowths.length).toFixed(1)
+    : '—';
+
+  document.getElementById('invest-legend').innerHTML = `
+    <span class="chart-legend-item">
+      <span class="chart-legend-dot" style="background:#1D9E75"></span>
+      Total acumulado: <strong style="color:var(--invest)">&nbsp;${fmt(totalInvestAnual)}</strong>
+    </span>
+    <span class="chart-legend-item">
+      <span class="chart-legend-dot" style="background:#185FA5"></span>
+      Crescimento médio mensal: <strong style="color:var(--reserve)">&nbsp;${avgGrowth}%</strong>
+    </span>`;
+
+  chartInvest = new Chart(document.getElementById('chart-invest'), {
+    type: 'line',
+    data: {
+      labels: MONTHS.map(m => m.slice(0,3)),
+      datasets: [
+        {
+          label: 'Acumulado (R$)',
+          data: investAccum,
+          borderColor: '#1D9E75',
+          backgroundColor: '#1D9E7522',
+          pointRadius: 4,
+          tension: 0.3,
+          fill: true,
+          yAxisID: 'yLeft'
+        },
+        {
+          label: 'Crescimento % (mês a mês)',
+          data: investGrowthPct,
+          borderColor: '#185FA5',
+          backgroundColor: '#185FA500',
+          pointRadius: 4,
+          tension: 0.3,
+          fill: false,
+          yAxisID: 'yRight',
+          borderDash: [5, 3]
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.datasetIndex === 0
+              ? ` Acumulado: ${fmt(ctx.raw)}`
+              : ctx.raw !== null ? ` Crescimento: ${ctx.raw}%` : ' —'
+          }
+        }
+      },
+      scales: {
+        yLeft: {
+          type: 'linear', position: 'left',
+          ticks: { callback: v => 'R$' + v.toLocaleString('pt-BR') }
+        },
+        yRight: {
+          type: 'linear', position: 'right',
+          grid: { drawOnChartArea: false },
+          ticks: { callback: v => v !== null ? v + '%' : '' }
+        },
         x: { ticks: { autoSkip: false } }
       }
     }
