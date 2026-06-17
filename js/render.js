@@ -40,8 +40,8 @@ function renderMetrics(sal, total, liquid, isAllMonths, year, month) {
     { label: 'Gastos fixos',       value: catTotal('fixed',    year, month), cls: '', dot: 'var(--fixed)' },
     { label: 'Gastos variáveis',   value: catTotal('variable', year, month), cls: '', dot: 'var(--variable)' },
     { label: 'Reservas/Objetivos', value: totalReserve, cls: '', dot: 'var(--reserve)' },
-    { label: isAllMonths ? '% gasto / salário anual' : '% gasto / salário', value: pct(total, sal), cls: '', dot: '#888', isPct: true,
-      tip: isAllMonths ? 'Fixos + Variáveis ÷ Salário anual' : 'Fixos + Variáveis ÷ Salário' },
+    { label: isAllMonths ? '% Gasto/Salário anual' : '% Gasto/Salário', value: pct(total, sal), cls: '', dot: '#888', isPct: true,
+      tip: isAllMonths ? 'Fixos + Variáveis + Reservas ÷ Salário anual' : 'Fixos + Variáveis + Reservas ÷ Salário' },
   ];
 
   document.getElementById('metrics-grid').innerHTML = metrics.map(m => `
