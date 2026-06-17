@@ -27,6 +27,28 @@ window.addFromSubcatModal  = addFromSubcatModal;
 window.editEntryFromSubcat = editEntryFromSubcat;
 window.deleteEntryFromSubcat = deleteEntryFromSubcat;
 window.switchTab           = switchTab;
+window.toggleFab           = toggleFab;
+window.closeFab            = closeFab;
+window.fabOpenEntry        = fabOpenEntry;
+window.fabOpenSalary       = fabOpenSalary;
+
+function toggleFab() {
+  document.getElementById('fab-container').classList.toggle('open');
+}
+
+function closeFab() {
+  document.getElementById('fab-container').classList.remove('open');
+}
+
+function fabOpenEntry() {
+  closeFab();
+  openAddModal();
+}
+
+function fabOpenSalary() {
+  closeFab();
+  openSalaryModal();
+}
 
 function buildSelectors() {
   const selMonth   = document.getElementById('sel-month');

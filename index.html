@@ -62,7 +62,6 @@
         <label for="sel-year">Ano</label>
         <select id="sel-year"></select>
       </div>
-      <button class="btn" onclick="openSalaryModal()">Salário</button>
     </div>
   </header>
 
@@ -193,7 +192,21 @@
 <!-- ══════════════════════════════════════════
      FAB — Botão flutuante para novo lançamento
      ══════════════════════════════════════════ -->
-<button class="fab" onclick="openAddModal()" aria-label="Adicionar lançamento">+</button>
+<div class="fab-backdrop" id="fab-backdrop" onclick="closeFab()"></div>
+<!-- FAB speed-dial -->
+<div class="fab-container" id="fab-container">
+  <div class="fab-options" id="fab-options" aria-hidden="true">
+    <button class="fab-option" onclick="fabOpenSalary()" aria-label="Definir salário">
+      <span class="fab-option-label">Salário</span>
+      <span class="fab-option-icon">💼</span>
+    </button>
+    <button class="fab-option" onclick="fabOpenEntry()" aria-label="Novo lançamento">
+      <span class="fab-option-label">Lançamento</span>
+      <span class="fab-option-icon">📝</span>
+    </button>
+  </div>
+  <button class="fab" id="fab-main" onclick="toggleFab()" aria-label="Ações" aria-expanded="false">+</button>
+</div>
 
 <!-- ══════════════════════════════════════════
      MODAL 1: Adicionar / Editar lançamento

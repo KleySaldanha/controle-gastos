@@ -426,18 +426,55 @@ input:focus, select:focus {
 .btn-danger     { color: var(--danger); border-color: var(--danger); }
 .btn-danger:hover { background: #FCEBEB; }
 
-/* Botão de ação flutuante (FAB) — canto inferior direito */
-.fab {
+/* FAB speed-dial — canto inferior direito */
+.fab-container {
   position: fixed; bottom: 24px; right: 24px;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 12px;
+  z-index: 150;
+}
+.fab {
   width: 52px; height: 52px; border-radius: 50%;
   background: var(--invest); color: #fff;
   border: none; font-size: 28px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 2px 12px rgba(0,0,0,0.2);
-  z-index: 150; transition: background 0.15s, transform 0.1s;
+  transition: background 0.15s, transform 0.25s;
+  flex-shrink: 0;
 }
-.fab:hover  { background: #0F6E56; transform: scale(1.05); }
+.fab:hover  { background: #0F6E56; }
 .fab:active { transform: scale(0.96); }
+.fab-container.open .fab { transform: rotate(45deg); }
+.fab-container.open .fab:hover { background: #0F6E56; transform: rotate(45deg) scale(1.05); }
+
+.fab-options {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+  pointer-events: none; opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.2s, transform 0.2s;
+}
+.fab-container.open .fab-options {
+  pointer-events: auto; opacity: 1; transform: translateY(0);
+}
+
+.fab-option {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); color: var(--text);
+  border: 0.5px solid var(--border-md);
+  border-radius: 24px; padding: 8px 14px 8px 16px;
+  cursor: pointer; font-size: 13px; font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  transition: background 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+.fab-option:hover  { background: var(--surface-2); transform: scale(1.03); }
+.fab-option:active { transform: scale(0.97); }
+.fab-option-icon   { font-size: 16px; }
+
+/* Overlay para fechar o speed-dial ao clicar fora */
+.fab-backdrop {
+  display: none; position: fixed; inset: 0; z-index: 149;
+}
+.fab-container.open ~ .fab-backdrop { display: block; }
 
 /* Botão ícone pequeno (editar/excluir dentro de listas) */
 .btn-icon {
