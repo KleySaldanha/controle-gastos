@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Controle de Gastos 2</title>
+<title>Controle de Gastos</title>
 
 <!--
   ================================================================
-  CONTROLE DE GASTOS — v1.0
+  CONTROLE DE GASTOS — v1.1
   ================================================================
   Tecnologia : HTML + CSS + JavaScript puro
   Gráficos   : Chart.js 4.4.1 (CDN)
@@ -409,7 +409,46 @@ input:focus, select:focus {
 .hidden { display: none !important; }
 
 /* ============================================================
-   12. RESPONSIVIDADE (mobile-first)
+   12. MODAL DE LANÇAMENTOS DA SUBCATEGORIA
+   Lista todos os lançamentos individuais de uma subcategoria
+   permitindo editar ou excluir cada um.
+   ============================================================ */
+.subcat-modal-total { font-size: 12px; color: var(--text-2); }
+.entries-list { display: flex; flex-direction: column; gap: 6px; }
+.entry-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  border: 0.5px solid var(--border);
+}
+.entry-row-info { flex: 1; min-width: 0; }
+.entry-row-desc {
+  font-size: 13px; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.entry-row-desc.no-desc { color: var(--text-3); font-style: italic; }
+.entry-row-meta { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+.entry-row-value { font-size: 14px; font-weight: 600; white-space: nowrap; }
+.entry-row-actions { display: flex; gap: 4px; }
+.btn-icon {
+  width: 30px; height: 30px;
+  border-radius: var(--radius);
+  border: 0.5px solid var(--border-md);
+  background: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: var(--text-2);
+  transition: background 0.15s, color 0.15s;
+}
+.btn-icon:hover { background: var(--surface); color: var(--text); }
+.btn-icon.danger:hover { background: #FCEBEB; color: var(--danger); border-color: var(--danger); }
+.entries-empty {
+  text-align: center; padding: 24px 0;
+  color: var(--text-3); font-size: 13px;
+}
+
+/* ============================================================
+   13. RESPONSIVIDADE (mobile-first)
    ============================================================ */
 @media (max-width: 600px) {
   .header  { padding: 10px 14px; }
@@ -642,6 +681,33 @@ input:focus, select:focus {
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('modal-salary')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveSalary()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL: Gerenciar lançamentos de uma subcategoria
+     Lista todos os lançamentos individuais com opção
+     de editar valor/descrição ou excluir cada um.
+     ══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-subcat"
+     role="dialog" aria-modal="true" aria-label="Lançamentos da subcategoria">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div>
+        <span class="modal-title" id="subcat-modal-title">Lançamentos</span>
+        <div class="subcat-modal-total" id="subcat-modal-total"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-subcat')" aria-label="Fechar">×</button>
+    </div>
+    <div class="modal-body" style="max-height:55vh; overflow-y:auto; padding-bottom:8px">
+      <div class="entries-list" id="subcat-entries-list"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn btn-primary" id="subcat-add-btn" onclick="addFromSubcatModal()">
+        + Novo lançamento
+      </button>
+      <button class="btn" onclick="closeModal('modal-subcat')">Fechar</button>
     </div>
   </div>
 </div>
@@ -1166,10 +1232,106 @@ function openAddModal(catId = null) {
   openModal('modal-entry');
 }
 
-/** Abre modal pré-selecionando categoria e subcategoria */
+/* ============================================================
+   I2. MODAL: GERENCIAR LANÇAMENTOS DE UMA SUBCATEGORIA
+   Ao clicar em uma subcategoria no dashboard, abre este modal
+   listando todos os lançamentos individuais do mês/ano atual.
+   O usuário pode editar ou excluir cada um, ou adicionar novo.
+   ============================================================ */
+
+/** Contexto do modal de subcategoria (categoria e subcat ativos) */
+let subcatContext = { catId: null, subcat: null };
+
+/**
+ * Abre o modal de gerenciamento de lançamentos de uma subcategoria.
+ * Chamado ao clicar em qualquer linha de subcategoria no dashboard.
+ */
 function openEditSubcat(catId, subcat) {
-  openAddModal(catId);
-  document.getElementById('entry-subcat').value = subcat;
+  subcatContext = { catId, subcat };
+  renderSubcatModal();
+  openModal('modal-subcat');
+}
+
+/**
+ * Renderiza (ou re-renderiza) a lista de lançamentos dentro do modal
+ * de subcategoria. Chamado ao abrir e após cada edição/exclusão.
+ */
+function renderSubcatModal() {
+  const { catId, subcat } = subcatContext;
+  const { year, month }   = state;
+  const cat = CATEGORIES.find(c => c.id === catId);
+
+  /* Título e total */
+  document.getElementById('subcat-modal-title').textContent = subcat;
+  const entries = getEntries(year, month).filter(e => e.catId === catId && e.subcat === subcat);
+  const total   = entries.reduce((a,e) => a + e.value, 0);
+  document.getElementById('subcat-modal-total').textContent =
+    `${MONTHS[month]} ${year} · Total: ${fmt(total)}`;
+
+  /* Lista de lançamentos */
+  const list = document.getElementById('subcat-entries-list');
+  if (entries.length === 0) {
+    list.innerHTML = `<div class="entries-empty">Nenhum lançamento neste mês.<br>Clique em "+ Novo lançamento" para adicionar.</div>`;
+    return;
+  }
+
+  list.innerHTML = entries.map(e => `
+    <div class="entry-row">
+      <div class="entry-row-info">
+        <div class="entry-row-desc ${!e.desc ? 'no-desc' : ''}">
+          ${e.desc || 'Sem descrição'}
+        </div>
+        <div class="entry-row-meta">${MONTHS[e.month]} ${e.year}</div>
+      </div>
+      <div class="entry-row-value" style="color:${cat.color}">${fmt(e.value)}</div>
+      <div class="entry-row-actions">
+        <button class="btn-icon" title="Editar" onclick="editEntryFromSubcat('${e.id}')">✏️</button>
+        <button class="btn-icon danger" title="Excluir" onclick="deleteEntryFromSubcat('${e.id}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+/**
+ * Abre o modal de edição para um lançamento específico.
+ * Pré-preenche todos os campos com os dados do lançamento.
+ */
+function editEntryFromSubcat(entryId) {
+  const entry = state.entries.find(e => String(e.id) === String(entryId));
+  if (!entry) return;
+
+  editingEntryId = entry.id;
+  document.getElementById('modal-entry-title').textContent = 'Editar lançamento';
+  document.getElementById('btn-delete-entry').classList.remove('hidden');
+
+  populateCatSelect();
+  document.getElementById('entry-cat').value = entry.catId;
+  populateSubcats();
+  document.getElementById('entry-subcat').value = entry.subcat;
+  document.getElementById('entry-desc').value   = entry.desc  || '';
+  document.getElementById('entry-value').value  = entry.value;
+  document.getElementById('entry-month').value  = entry.month;
+
+  /* Ao salvar, fecha o modal de entrada E atualiza a lista da subcategoria */
+  openModal('modal-entry');
+}
+
+/**
+ * Exclui um lançamento diretamente da lista do modal de subcategoria,
+ * sem precisar abrir o modal de edição.
+ */
+function deleteEntryFromSubcat(entryId) {
+  state.entries = state.entries.filter(e => String(e.id) !== String(entryId));
+  saveState();
+  renderSubcatModal(); // atualiza a lista no modal
+  render();            // atualiza o dashboard
+  showToast('Lançamento excluído.');
+}
+
+/** Abre modal de novo lançamento pré-selecionando a subcat do contexto atual */
+function addFromSubcatModal() {
+  closeModal('modal-subcat');
+  openAddModal(subcatContext.catId);
+  document.getElementById('entry-subcat').value = subcatContext.subcat;
 }
 
 /** Salva novo lançamento ou atualiza existente */
@@ -1197,6 +1359,8 @@ function saveEntry() {
   saveState();
   closeModal('modal-entry');
   render();
+  /* Se o modal de subcategoria estava aberto antes da edição, re-renderiza a lista */
+  if (subcatContext.catId) renderSubcatModal();
   showToast('Lançamento salvo!');
 }
 
@@ -1207,6 +1371,8 @@ function deleteEntry() {
   saveState();
   closeModal('modal-entry');
   render();
+  /* Se veio de uma edição via modal de subcategoria, reabre a lista */
+  if (subcatContext.catId) renderSubcatModal();
   showToast('Lançamento excluído.');
 }
 
