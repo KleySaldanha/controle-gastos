@@ -698,7 +698,7 @@ input:focus, select:focus {
         <span class="modal-title" id="subcat-modal-title">Lançamentos</span>
         <div class="subcat-modal-total" id="subcat-modal-total"></div>
       </div>
-      <button class="modal-close" onclick="closeModal('modal-subcat')" aria-label="Fechar">×</button>
+      <button class="modal-close" onclick="subcatContext={catId:null,subcat:null}; closeModal('modal-subcat')" aria-label="Fechar">×</button>
     </div>
     <div class="modal-body" style="max-height:55vh; overflow-y:auto; padding-bottom:8px">
       <div class="entries-list" id="subcat-entries-list"></div>
@@ -707,7 +707,7 @@ input:focus, select:focus {
       <button class="btn btn-primary" id="subcat-add-btn" onclick="addFromSubcatModal()">
         + Novo lançamento
       </button>
-      <button class="btn" onclick="closeModal('modal-subcat')">Fechar</button>
+      <button class="btn" onclick="subcatContext={catId:null,subcat:null}; closeModal('modal-subcat')">Fechar</button>
     </div>
   </div>
 </div>
@@ -1311,7 +1311,9 @@ function editEntryFromSubcat(entryId) {
   document.getElementById('entry-value').value  = entry.value;
   document.getElementById('entry-month').value  = entry.month;
 
-  /* Ao salvar, fecha o modal de entrada E atualiza a lista da subcategoria */
+  /* Fecha o modal da subcategoria antes de abrir o de edição,
+     evitando sobreposição de modais na tela. */
+  closeModal('modal-subcat');
   openModal('modal-entry');
 }
 
@@ -1359,8 +1361,11 @@ function saveEntry() {
   saveState();
   closeModal('modal-entry');
   render();
-  /* Se o modal de subcategoria estava aberto antes da edição, re-renderiza a lista */
-  if (subcatContext.catId) renderSubcatModal();
+  /* Se veio de edição via modal de subcategoria, reabre a lista atualizada */
+  if (subcatContext.catId) {
+    renderSubcatModal();
+    openModal('modal-subcat');
+  }
   showToast('Lançamento salvo!');
 }
 
@@ -1371,8 +1376,11 @@ function deleteEntry() {
   saveState();
   closeModal('modal-entry');
   render();
-  /* Se veio de uma edição via modal de subcategoria, reabre a lista */
-  if (subcatContext.catId) renderSubcatModal();
+  /* Se veio de edição via modal de subcategoria, reabre a lista atualizada */
+  if (subcatContext.catId) {
+    renderSubcatModal();
+    openModal('modal-subcat');
+  }
   showToast('Lançamento excluído.');
 }
 
@@ -1413,7 +1421,11 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 /* Fecha modal ao clicar fora dele */
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', e => {
-    if (e.target === overlay) overlay.classList.remove('open');
+    if (e.target === overlay) {
+      overlay.classList.remove('open');
+      /* Limpa o contexto de subcategoria ao fechar o modal clicando fora */
+      if (overlay.id === 'modal-subcat') subcatContext = { catId: null, subcat: null };
+    }
   });
 });
 
