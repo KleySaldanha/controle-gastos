@@ -68,7 +68,7 @@ export const CATEGORIES = [
     name: 'Reserva Financeira/Objetivos',
     color: 'var(--reserve)',
     bg:    'var(--reserve-bg)',
-    isExpense: false,
+    isExpense: true,
     subcats: [
       'Imóvel',
       'Carro',
