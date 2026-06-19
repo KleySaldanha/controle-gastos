@@ -1,9 +1,11 @@
 import '../css/styles.css';
-import { onAuthChange, getUserProfile, getAllUsers, updateUserRole, setUserActive, logout, authErrorMessage } from './auth.js';
-import { auth } from './firebase.js';
+import {
+  onAuthChange, getUserProfile, getAllUsers,
+  updateUserRole, setUserActive, logout,
+  updateOtherUserName, sendPasswordReset, authErrorMessage,
+} from './auth.js';
 
 const BASE = import.meta.env.BASE_URL;
-
 let currentUid = null;
 
 onAuthChange(async (user) => {
@@ -27,14 +29,14 @@ async function loadUsers() {
     countEl.textContent = `${users.length} usuário${users.length !== 1 ? 's' : ''}`;
     tbody.innerHTML = users.map(u => renderRow(u)).join('');
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="5" class="auth-error">Erro ao carregar usuários.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="auth-error" style="padding:24px;text-align:center">Erro ao carregar usuários.</td></tr>`;
     console.error(err);
   }
 }
 
 function renderRow(u) {
-  const isMe      = u.uid === currentUid;
-  const roleBadge = u.role === 'admin'
+  const isMe       = u.uid === currentUid;
+  const roleBadge  = u.role === 'admin'
     ? '<span class="role-badge admin">Admin</span>'
     : '<span class="role-badge">Usuário</span>';
   const activeBadge = u.active !== false
@@ -42,45 +44,54 @@ function renderRow(u) {
     : '<span class="status-badge inactive">Inativo</span>';
 
   const roleBtn = isMe ? '' : `
-    <button class="btn btn-sm" onclick="toggleRole('${u.uid}', '${u.role}')">
+    <button class="btn btn-sm" onclick="toggleRole('${u.uid}','${u.role}')">
       ${u.role === 'admin' ? 'Tornar Usuário' : 'Tornar Admin'}
     </button>`;
 
   const activeBtn = isMe ? '' : `
-    <button class="btn btn-sm ${u.active !== false ? 'btn-danger' : ''}" onclick="toggleActive('${u.uid}', ${u.active !== false})">
+    <button class="btn btn-sm ${u.active !== false ? 'btn-danger' : ''}"
+            onclick="toggleActive('${u.uid}',${u.active !== false})">
       ${u.active !== false ? 'Desativar' : 'Ativar'}
     </button>`;
 
   return `
     <tr id="row-${u.uid}">
       <td class="td-name">
-        <div class="user-row-name">${u.name || '—'}</div>
+        <div class="user-row-name" id="name-display-${u.uid}">${u.name || '—'}</div>
         <div class="user-row-email">${u.email}</div>
       </td>
       <td>${roleBadge}</td>
       <td>${activeBadge}</td>
       <td class="td-since">${u.createdAt ? new Date(u.createdAt).toLocaleDateString('pt-BR') : '—'}</td>
-      <td class="td-actions">${roleBtn}${activeBtn}</td>
+      <td class="td-actions">
+        <button class="btn btn-sm" onclick="openEditModal('${u.uid}','${(u.name||'').replace(/'/g,"\\'")}','${u.email}')">Editar</button>
+        ${roleBtn}
+        ${activeBtn}
+      </td>
     </tr>`;
 }
 
-window.toggleRole = async (uid, currentRole) => {
-  const newRole = currentRole === 'admin' ? 'user' : 'admin';
-  try {
-    await updateUserRole(uid, newRole);
-    loadUsers();
-  } catch (err) {
-    alert('Erro ao alterar perfil: ' + authErrorMessage(err.code));
-  }
+/* ── Modal de edição ── */
+window.openEditModal = (uid, name, email) => {
+  document.getElementById('edit-uid').value   = uid;
+  document.getElementById('edit-name').value  = name;
+  document.getElementById('edit-email-info').textContent = email;
+  document.getElementById('edit-msg').textContent = '';
+  document.getElementById('edit-modal').classList.add('open');
 };
 
-window.toggleActive = async (uid, currentActive) => {
-  try {
-    await setUserActive(uid, !currentActive);
-    loadUsers();
-  } catch (err) {
-    alert('Erro ao alterar status: ' + authErrorMessage(err.code));
-  }
+window.closeEditModal = () => {
+  document.getElementById('edit-modal').classList.remove('open');
+};
+
+window.toggleRole   = async (uid, role) => {
+  try { await updateUserRole(uid, role === 'admin' ? 'user' : 'admin'); loadUsers(); }
+  catch (err) { alert(authErrorMessage(err.code)); }
+};
+
+window.toggleActive = async (uid, active) => {
+  try { await setUserActive(uid, !active); loadUsers(); }
+  catch (err) { alert(authErrorMessage(err.code)); }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -90,4 +101,41 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('refresh-btn').addEventListener('click', loadUsers);
+
+  /* Salvar nome */
+  document.getElementById('edit-name-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const uid  = document.getElementById('edit-uid').value;
+    const name = document.getElementById('edit-name').value.trim();
+    const msg  = document.getElementById('edit-msg');
+    if (!name) { msg.textContent = 'Informe um nome.'; msg.className = 'auth-error'; return; }
+    try {
+      await updateOtherUserName(uid, name);
+      document.getElementById(`name-display-${uid}`).textContent = name;
+      msg.textContent = 'Nome atualizado!';
+      msg.className = 'form-success';
+    } catch (err) {
+      msg.textContent = authErrorMessage(err.code);
+      msg.className = 'auth-error';
+    }
+  });
+
+  /* Enviar reset de senha */
+  document.getElementById('send-reset-btn').addEventListener('click', async () => {
+    const email = document.getElementById('edit-email-info').textContent;
+    const msg   = document.getElementById('edit-msg');
+    try {
+      await sendPasswordReset(email);
+      msg.textContent = `E-mail de redefinição enviado para ${email}.`;
+      msg.className = 'form-success';
+    } catch (err) {
+      msg.textContent = authErrorMessage(err.code);
+      msg.className = 'auth-error';
+    }
+  });
+
+  /* Fechar modal clicando fora */
+  document.getElementById('edit-modal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('edit-modal')) closeEditModal();
+  });
 });

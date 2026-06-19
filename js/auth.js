@@ -6,6 +6,7 @@ import {
   updatePassword,
   reauthenticateWithCredential,
   EmailAuthProvider,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import {
   doc, setDoc, getDoc, updateDoc,
@@ -93,6 +94,16 @@ export async function updateUserName(name) {
   const uid = auth.currentUser?.uid;
   if (!uid) return;
   await updateDoc(doc(db, 'users', uid), { name });
+}
+
+/* ── Admin: atualiza nome de outro usuário ── */
+export async function updateOtherUserName(uid, name) {
+  await updateDoc(doc(db, 'users', uid), { name });
+}
+
+/* ── Admin: envia e-mail de redefinição de senha ── */
+export async function sendPasswordReset(email) {
+  await sendPasswordResetEmail(auth, email);
 }
 
 /* ── Perfil: altera senha (requer senha atual para re-autenticar) ── */

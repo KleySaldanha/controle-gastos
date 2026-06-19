@@ -1,16 +1,20 @@
 import '../css/styles.css';
-import { login, onAuthChange, authErrorMessage } from './auth.js';
+import { login, authErrorMessage } from './auth.js';
+import { auth } from './firebase.js';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const BASE = import.meta.env.BASE_URL;
 
-/* Redireciona se já estiver logado */
-onAuthChange((user) => {
+/* Verifica UMA VEZ se já está logado ao carregar a página */
+const unsub = onAuthStateChanged(auth, (user) => {
+  unsub();
   if (user) window.location.href = BASE + 'index.html';
 });
 
 document.addEventListener('DOMContentLoaded', () => {
   if (new URLSearchParams(location.search).get('desativado')) {
-    document.getElementById('login-error').textContent = 'Sua conta foi desativada. Contate o administrador.';
+    document.getElementById('login-error').textContent =
+      'Sua conta foi desativada. Contate o administrador.';
   }
 
   document.getElementById('login-form').addEventListener('submit', async (e) => {
