@@ -43,7 +43,7 @@ Aplicação web para gestão financeira pessoal com autenticação de usuários.
 | JavaScript (ES Modules) | Lógica da aplicação |
 | [Firebase Authentication](https://firebase.google.com/products/auth) | Autenticação de usuários |
 | [Cloud Firestore](https://firebase.google.com/products/firestore) | Banco de dados por usuário |
-| [Chart.js 4](https://www.chartjs.org/) | Gráficos |
+| [ApexCharts](https://apexcharts.com/) | Gráficos |
 | [Vite 5](https://vitejs.dev/) | Bundler e servidor de desenvolvimento |
 | GitHub Actions | CI/CD para deploy automático |
 | GitHub Pages | Hospedagem |
