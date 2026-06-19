@@ -59,13 +59,15 @@ function renderMetrics(sal, total, liquid, isAllMonths, year, month) {
 }
 
 export function renderCategories(year, month, sal) {
+  const totalExp = totalGastos(year, month);
   document.getElementById('categories-grid').innerHTML =
-    CATEGORIES.map(cat => renderCategoryCard(cat, year, month, sal)).join('');
+    CATEGORIES.map(cat => renderCategoryCard(cat, year, month, sal, totalExp)).join('');
 }
 
-function renderCategoryCard(cat, year, month, sal) {
-  const catTot = catTotal(cat.id, year, month);
-  const pctSal = pct(catTot, sal);
+function renderCategoryCard(cat, year, month, sal, totalExp) {
+  const catTot  = catTotal(cat.id, year, month);
+  const pctSal  = pct(catTot, sal);
+  const pctExp  = pct(catTot, totalExp);
   const entries = getEntries(year, month).filter(e => e.catId === cat.id);
 
   const bySub = {};
@@ -80,7 +82,7 @@ function renderCategoryCard(cat, year, month, sal) {
   <div class="cat-card">
     <div class="cat-header">
       <div class="cat-title">
-        ${cat.id !== 'invest' ? `<span class="cat-badge" style="background:${cat.bg};color:${cat.color}">${pctSal.toFixed(1)}%</span>` : ''}
+        ${cat.id !== 'invest' ? `<span class="cat-badge" style="background:${cat.bg};color:${cat.color}" title="% do total de gastos">${pctExp.toFixed(1)}%</span>` : ''}
         ${cat.name}
       </div>
       <div class="cat-total" style="color:${cat.color}">${fmt(catTot)}</div>
