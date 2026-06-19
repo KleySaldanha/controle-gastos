@@ -6,16 +6,23 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Perfis de usuário — qualquer autenticado pode ler; só o próprio ou admin pode escrever
+    function isActive() {
+      let p = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return p.active == true || !('active' in p);
+    }
+
+    // Perfis de usuário
     match /users/{uid} {
-      allow read:   if request.auth != null;
+      allow list:   if request.auth != null && isAdmin();
+      allow get:    if request.auth != null;
       allow create: if request.auth != null && request.auth.uid == uid;
       allow update: if request.auth != null && (request.auth.uid == uid || isAdmin());
     }
 
     // Dados financeiros — só o dono ou admin podem ler/escrever
     match /data/{uid} {
-      allow read, write: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow read, write: if request.auth != null && isActive() &&
+                            (request.auth.uid == uid || isAdmin());
     }
   }
 }

@@ -9,6 +9,10 @@ onAuthChange((user) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+  if (new URLSearchParams(location.search).get('desativado')) {
+    document.getElementById('login-error').textContent = 'Sua conta foi desativada. Contate o administrador.';
+  }
+
   document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email    = document.getElementById('login-email').value.trim();

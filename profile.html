@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minha Conta — Controle de Gastos</title>
+  <script type="module" src="/js/profile.js"></script>
+</head>
+<body class="auth-body">
+
+<div class="auth-card profile-card">
+
+  <div class="profile-header">
+    <a href="index.html" class="back-link">← Voltar</a>
+    <div class="auth-logo">💰</div>
+    <h1 class="auth-title">Minha Conta</h1>
+    <p id="profile-name-display" class="profile-name-display">—</p>
+    <p id="profile-email" class="profile-email-display">—</p>
+    <div id="profile-role"></div>
+  </div>
+
+  <hr class="profile-divider">
+
+  <!-- Alterar nome -->
+  <section class="profile-section">
+    <h2 class="profile-section-title">Alterar nome</h2>
+    <form id="name-form" class="auth-form" novalidate>
+      <div class="field">
+        <label for="name-input">Nome</label>
+        <input type="text" id="name-input" placeholder="Seu nome" required>
+      </div>
+      <p id="name-msg" class="auth-error"></p>
+      <button type="submit" id="name-btn" class="btn btn-primary auth-btn">Salvar nome</button>
+    </form>
+  </section>
+
+  <hr class="profile-divider">
+
+  <!-- Alterar senha -->
+  <section class="profile-section">
+    <h2 class="profile-section-title">Alterar senha</h2>
+    <form id="password-form" class="auth-form" novalidate>
+      <div class="field">
+        <label for="pw-current">Senha atual</label>
+        <input type="password" id="pw-current" placeholder="••••••" required autocomplete="current-password">
+      </div>
+      <div class="field">
+        <label for="pw-new">Nova senha</label>
+        <input type="password" id="pw-new" placeholder="Mínimo 6 caracteres" required autocomplete="new-password">
+      </div>
+      <div class="field">
+        <label for="pw-confirm">Confirmar nova senha</label>
+        <input type="password" id="pw-confirm" placeholder="Repita a nova senha" required autocomplete="new-password">
+      </div>
+      <p id="pw-msg" class="auth-error"></p>
+      <button type="submit" id="pw-btn" class="btn btn-primary auth-btn">Alterar senha</button>
+    </form>
+  </section>
+
+  <hr class="profile-divider">
+
+  <button id="logout-btn" class="btn btn-danger auth-btn">Sair da conta</button>
+
+</div>
+
+</body>
+</html>

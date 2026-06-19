@@ -3,7 +3,6 @@ import { register, onAuthChange, authErrorMessage } from './auth.js';
 
 const BASE = import.meta.env.BASE_URL;
 
-/* Redireciona se já estiver logado */
 onAuthChange((user) => {
   if (user) window.location.href = BASE + 'index.html';
 });
@@ -15,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const email    = document.getElementById('reg-email').value.trim();
     const password = document.getElementById('reg-password').value;
     const confirm  = document.getElementById('reg-confirm').value;
-    const role     = document.getElementById('reg-role').value;
     const btn      = document.getElementById('register-btn');
     const errEl    = document.getElementById('register-error');
 
@@ -34,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.textContent = 'Cadastrando...';
 
     try {
-      await register(name, email, password, role);
+      await register(name, email, password);
       window.location.href = BASE + 'index.html';
     } catch (err) {
       errEl.textContent = authErrorMessage(err.code);

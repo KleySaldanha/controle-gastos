@@ -10,7 +10,7 @@ import {
   clearSubcatContext, openEditSubcat,
   addFromSubcatModal, editEntryFromSubcat, deleteEntryFromSubcat,
 } from './modals.js';
-import { onAuthChange, logout, getUserProfile } from './auth.js';
+import { onAuthChange, logout, getUserProfile, createAdminProfile } from './auth.js';
 
 /* ── Expõe funções chamadas via onclick no HTML ── */
 window.openSalaryModal       = openSalaryModal;
@@ -41,21 +41,46 @@ document.addEventListener('DOMContentLoaded', () => {
       window.location.href = BASE + 'login.html';
       return;
     }
-    const profile = await getUserProfile(user.uid);
-    showUserInfo(user, profile);
+
+    let profile = await getUserProfile(user.uid);
+
+    /* Usuário criado via console do Firebase não tem perfil — cria como admin */
+    if (!profile) {
+      profile = await createAdminProfile(user);
+    }
+
+    /* Conta desativada pelo admin */
+    if (profile.active === false) {
+      await logout();
+      window.location.href = BASE + 'login.html?desativado=1';
+      return;
+    }
+
+    renderHeader(user, profile);
     await loadState();
     init();
+
     document.getElementById('app-loading').style.display = 'none';
     document.getElementById('app-content').style.display = '';
   });
 });
 
-function showUserInfo(user, profile) {
-  const name  = profile?.name || user.email;
-  const role  = profile?.role || 'user';
-  const badge = role === 'admin' ? '<span class="role-badge admin">Admin</span>' : '<span class="role-badge">Usuário</span>';
-  document.getElementById('user-info').innerHTML =
-    `<span class="user-name">${name}</span>${badge}`;
+function renderHeader(user, profile) {
+  const name       = profile?.name || user.email;
+  const isAdmin    = profile?.role === 'admin';
+  const badge      = isAdmin
+    ? '<span class="role-badge admin">Admin</span>'
+    : '<span class="role-badge">Usuário</span>';
+  const adminLink  = isAdmin
+    ? `<a href="${BASE}admin.html" class="btn">Usuários</a>`
+    : '';
+
+  document.getElementById('user-info').innerHTML = `
+    <a href="${BASE}profile.html" class="user-name-link" title="Minha conta">
+      <span class="user-name">${name}</span>${badge}
+    </a>
+    ${adminLink}
+  `;
 }
 
 async function handleLogout() {
@@ -64,20 +89,10 @@ async function handleLogout() {
 }
 
 /* ── FAB speed-dial ── */
-function toggleFab() {
-  document.getElementById('fab-container').classList.toggle('open');
-}
-function closeFab() {
-  document.getElementById('fab-container').classList.remove('open');
-}
-function fabOpenEntry() {
-  closeFab();
-  openAddModal();
-}
-function fabOpenSalary() {
-  closeFab();
-  openSalaryModal();
-}
+function toggleFab() { document.getElementById('fab-container').classList.toggle('open'); }
+function closeFab()  { document.getElementById('fab-container').classList.remove('open'); }
+function fabOpenEntry()  { closeFab(); openAddModal(); }
+function fabOpenSalary() { closeFab(); openSalaryModal(); }
 
 /* ── Seletores de mês / ano ── */
 function buildSelectors() {
