@@ -80,6 +80,7 @@ function renderCategoryCard(cat, year, month, sal) {
   <div class="cat-card">
     <div class="cat-header">
       <div class="cat-title">
+        ${cat.id !== 'invest' ? `<span class="cat-badge" style="background:${cat.bg};color:${cat.color}">${pctSal.toFixed(1)}%</span>` : ''}
         ${cat.name}
       </div>
       <div class="cat-total" style="color:${cat.color}">${fmt(catTot)}</div>

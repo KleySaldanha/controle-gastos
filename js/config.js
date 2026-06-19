@@ -10,21 +10,6 @@
 /** @type {Category[]} */
 export const CATEGORIES = [
   {
-    id: 'invest',
-    name: 'Investimentos',
-    color: 'var(--invest)',
-    bg:    'var(--invest-bg)',
-    isExpense: false,
-    subcats: [
-      'Porquinho Nubank',
-      'XP Investimentos',
-      'Clear Corretora',
-      'Mercado Bitcoin',
-      'Pagbank',
-      'Caixinhas/Poupança',
-    ],
-  },
-  {
     id: 'fixed',
     name: 'Gastos Fixos/Essências',
     color: 'var(--fixed)',
@@ -82,6 +67,21 @@ export const CATEGORIES = [
       'Emp. Contas Invest',
     ],
   },
+  {
+    id: 'invest',
+    name: 'Investimentos',
+    color: 'var(--invest)',
+    bg:    'var(--invest-bg)',
+    isExpense: false,
+    subcats: [
+      'Porquinho Nubank',
+      'XP Investimentos',
+      'Clear Corretora',
+      'Mercado Bitcoin',
+      'Pagbank',
+      'Caixinhas/Poupança',
+    ],
+  },
 ];
 
 export const MONTHS = [
@@ -92,4 +92,5 @@ export const MONTHS = [
 
 export const STORAGE_KEY = 'cgastos_v1';
 
-export const CHART_COLORS = ['#1D9E75', '#534AB7', '#D85A30', '#185FA5'];
+// Ordem: fixed, variable, reserve, invest
+export const CHART_COLORS = ['#534AB7', '#D85A30', '#185FA5', '#1D9E75'];
