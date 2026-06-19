@@ -73,6 +73,10 @@ function renderRow(u) {
 
 /* ── Modal de edição ── */
 window.openEditModal = (uid, name, email) => {
+  if (uid === currentUid) {
+    window.location.href = BASE + 'profile.html';
+    return;
+  }
   document.getElementById('edit-uid').value   = uid;
   document.getElementById('edit-name').value  = name;
   document.getElementById('edit-email-info').textContent = email;
