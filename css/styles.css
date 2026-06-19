@@ -551,3 +551,87 @@ input:focus, select:focus {
   .categories-grid { grid-template-columns: 1fr; }
   .charts-grid     { grid-template-columns: 1fr; }
 }
+
+/* ================================================================
+   LOADING DE AUTENTICAÇÃO
+   ================================================================ */
+.app-loading {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+  z-index: 9999;
+}
+.app-loading-spinner {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 3px solid var(--border-md);
+  border-top-color: var(--invest);
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ================================================================
+   USUÁRIO NO HEADER
+   ================================================================ */
+.user-info {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px;
+}
+.user-name {
+  color: var(--text-2);
+  max-width: 140px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.role-badge {
+  font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 20px;
+  background: var(--surface-2); color: var(--text-2);
+  border: 0.5px solid var(--border-md);
+  white-space: nowrap;
+}
+.role-badge.admin {
+  background: var(--invest-bg); color: var(--invest);
+  border-color: var(--invest);
+}
+
+/* ================================================================
+   PÁGINAS DE AUTENTICAÇÃO (login / cadastro)
+   ================================================================ */
+.auth-body {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+  padding: 24px;
+}
+.auth-card {
+  width: 100%; max-width: 400px;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: calc(var(--radius) * 2);
+  padding: 40px 36px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+}
+.auth-logo {
+  font-size: 40px; text-align: center; margin-bottom: 8px;
+}
+.auth-title {
+  font-size: 20px; font-weight: 700; text-align: center;
+  color: var(--text); margin: 0 0 4px;
+}
+.auth-subtitle {
+  font-size: 13px; color: var(--text-2); text-align: center;
+  margin: 0 0 28px;
+}
+.auth-form { display: flex; flex-direction: column; gap: 14px; }
+.auth-btn   { width: 100%; padding: 10px; font-size: 14px; margin-top: 4px; }
+.auth-error {
+  font-size: 13px; color: var(--danger);
+  min-height: 18px; text-align: center;
+}
+.auth-link {
+  text-align: center; font-size: 13px;
+  color: var(--text-2); margin: 20px 0 0;
+}
+.auth-link a {
+  color: var(--invest); text-decoration: none; font-weight: 600;
+}
+.auth-link a:hover { text-decoration: underline; }

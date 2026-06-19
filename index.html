@@ -38,13 +38,14 @@
 </head>
 
 <body>
-<div class="app">
 
-  <!-- ══════════════════════════════════════════
-       CABEÇALHO
-       Controles de navegação temporal (mês/ano)
-       e acesso ao modal de salário.
-       ══════════════════════════════════════════ -->
+<!-- Loading enquanto verifica autenticação -->
+<div id="app-loading" class="app-loading">
+  <div class="app-loading-spinner"></div>
+</div>
+
+<div id="app-content" class="app" style="display:none">
+
   <header class="header">
     <div class="header-left">
       <div class="header-logo" aria-hidden="true">💰</div>
@@ -62,6 +63,8 @@
         <label for="sel-year">Ano</label>
         <select id="sel-year"></select>
       </div>
+      <div id="user-info" class="user-info"></div>
+      <button class="btn" onclick="handleLogout()">Sair</button>
     </div>
   </header>
 
@@ -309,17 +312,6 @@
 <!-- Toast de feedback -->
 <div class="toast" id="toast"></div>
 
-<!-- ══════════════════════════════════════════
-     MÓDULOS JAVASCRIPT
-     Ordem obrigatória de carregamento:
-       1. config   — constantes e definições
-       2. state    — estado e persistência
-       3. finance  — cálculos (depende de config e state)
-       4. render   — dashboard e tabela (depende de finance)
-       5. charts   — gráficos (depende de finance)
-       6. modals   — modais (depende de render)
-       7. app      — inicialização (depende de tudo acima)
-     ══════════════════════════════════════════ -->
-
+</div><!-- /app-content -->
 </body>
 </html>

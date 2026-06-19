@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Perfis de usuário — qualquer autenticado pode ler; só o próprio ou admin pode escrever
+    match /users/{uid} {
+      allow read:   if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null && (request.auth.uid == uid || isAdmin());
+    }
+
+    // Dados financeiros — só o dono ou admin podem ler/escrever
+    match /data/{uid} {
+      allow read, write: if request.auth != null && (request.auth.uid == uid || isAdmin());
+    }
+  }
+}

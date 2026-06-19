@@ -1,4 +1,6 @@
-import { MONTHS, STORAGE_KEY } from './config.js';
+import { MONTHS } from './config.js';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from './firebase.js';
 
 /** @typedef {Object} Entry
  * @property {number} id
@@ -17,21 +19,27 @@ export let state = {
   entries: [],
 };
 
-export function saveState() {
+export async function loadState() {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const snap = await getDoc(doc(db, 'data', uid));
+    if (snap.exists()) {
+      const { entries, salary } = snap.data();
+      state = { ...state, entries: entries || [], salary: salary || {} };
+    }
   } catch (e) {
-    console.warn('[state] Não foi possível salvar:', e);
+    console.warn('[state] Erro ao carregar:', e);
   }
 }
 
-export function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) state = { ...state, ...JSON.parse(raw) };
-  } catch (e) {
-    console.warn('[state] Não foi possível carregar:', e);
-  }
+export function saveState() {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+  setDoc(doc(db, 'data', uid), {
+    entries: state.entries,
+    salary:  state.salary,
+  }).catch(e => console.warn('[state] Erro ao salvar:', e));
 }
 
 export function getEntries(year, month) {
@@ -47,15 +55,8 @@ export function getSalary(year, month) {
   return (state.salary[year] && state.salary[year][month]) || 0;
 }
 
-export function setYear(year) {
-  state.year = year;
-  saveState();
-}
-
-export function setMonth(month) {
-  state.month = month;
-  saveState();
-}
+export function setYear(year)   { state.year  = year;  }
+export function setMonth(month) { state.month = month; }
 
 export function setSalary(year, month, value) {
   if (!state.salary[year]) state.salary[year] = {};
