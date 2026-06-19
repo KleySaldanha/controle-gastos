@@ -32,20 +32,23 @@ function renderMetrics(sal, total, liquid, isAllMonths, year, month) {
   const totalInvest  = catTotal('invest',   year, month);
   const totalReserve = catTotal('reserve',  year, month);
 
-  const metrics = [
-    { label: 'Salário líquido',    value: sal,    cls: '',  dot: '#888' },
-    { label: 'Total gastos',       value: total,  cls: '',  dot: '#D85A30', tip: 'Fixos + Variáveis + Reservas/Objetivos' },
-    { label: 'Líquido',            value: liquid, cls: liquid >= 0 ? 'positive' : 'negative', dot: liquid >= 0 ? '#639922' : '#E24B4A' },
-    { label: 'Investimentos',      value: totalInvest,  cls: '', dot: 'var(--invest)',   tip: 'Não entra nos gastos' },
-    { label: 'Gastos fixos',       value: catTotal('fixed',    year, month), cls: '', dot: 'var(--fixed)' },
-    { label: 'Gastos variáveis',   value: catTotal('variable', year, month), cls: '', dot: 'var(--variable)' },
-    { label: 'Reservas/Objetivos', value: totalReserve, cls: '', dot: 'var(--reserve)' },
-    { label: isAllMonths ? '% Gasto/Salário anual' : '% Gasto/Salário', value: pct(total, sal), cls: '', dot: '#888', isPct: true,
+  const primary = [
+    { label: 'Salário líquido', value: sal,    cls: '',  dot: '#888' },
+    { label: 'Total gastos',    value: total,  cls: '',  dot: '#D85A30', tip: 'Fixos + Variáveis + Reservas/Objetivos' },
+    { label: 'Líquido',         value: liquid, cls: liquid >= 0 ? 'positive' : 'negative', dot: liquid >= 0 ? '#639922' : '#E24B4A' },
+    { label: isAllMonths ? '% Gastos anual' : '% Gastos', value: pct(total, sal), cls: '', dot: '#888', isPct: true,
       tip: isAllMonths ? 'Fixos + Variáveis + Reservas ÷ Salário anual' : 'Fixos + Variáveis + Reservas ÷ Salário' },
   ];
 
-  document.getElementById('metrics-grid').innerHTML = metrics.map(m => `
-    <div class="metric-card" ${m.tip ? `title="${m.tip}"` : ''}>
+  const secondary = [
+    { label: 'Gastos fixos',       value: catTotal('fixed',    year, month), cls: '', dot: 'var(--fixed)' },
+    { label: 'Gastos variáveis',   value: catTotal('variable', year, month), cls: '', dot: 'var(--variable)' },
+    { label: 'Reservas/Objetivos', value: totalReserve, cls: '', dot: 'var(--reserve)' },
+    { label: 'Investimentos',      value: totalInvest,  cls: '', dot: 'var(--invest)', tip: 'Não entra nos gastos' },
+  ];
+
+  const cardHtml = (m, big) => `
+    <div class="metric-card${big ? ' metric-card--primary' : ''}" ${m.tip ? `title="${m.tip}"` : ''}>
       <div class="metric-label">
         <span class="metric-dot" style="background:${m.dot}"></span>
         ${m.label}${m.tip ? ' ℹ️' : ''}
@@ -55,7 +58,10 @@ function renderMetrics(sal, total, liquid, isAllMonths, year, month) {
           ? m.value.toFixed(1) + '%'
           : (m.value < 0 ? '-' : '') + fmt(m.value)}
       </div>
-    </div>`).join('');
+    </div>`;
+
+  document.getElementById('metrics-primary').innerHTML   = primary.map(m => cardHtml(m, true)).join('');
+  document.getElementById('metrics-secondary').innerHTML = secondary.map(m => cardHtml(m, false)).join('');
 }
 
 export function renderCategories(year, month, sal) {
