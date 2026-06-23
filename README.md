@@ -11,7 +11,7 @@ Aplicação web para gestão financeira pessoal com autenticação de usuários.
 **Dashboard**
 - Barra de distribuição do salário por categoria
 - Cards de resumo em destaque: Salário líquido, Total gastos, Líquido e % Gastos
-- Cards secundários por categoria: Gastos fixos, Gastos variáveis, Reservas/Objetivos e Investimentos
+- Cards secundários por categoria: Gastos Fixos, Gastos Variáveis, Reserva Financeira, Objetivos e Investimentos
 - Cards de categorias com percentual sobre o total de gastos e subcategorias detalhadas
 
 **Lançamentos**
@@ -34,6 +34,13 @@ Aplicação web para gestão financeira pessoal com autenticação de usuários.
 - Dados financeiros isolados por usuário no Firestore
 - Página de perfil: alterar nome e senha
 - Painel administrativo: listar usuários, alterar perfil de acesso, ativar/desativar contas e enviar redefinição de senha
+
+**Categorias**
+- Gerenciamento completo de categorias e subcategorias por usuário
+- Criar, editar (nome, cor, tipo) e excluir categorias
+- Adicionar, renomear e excluir subcategorias
+- Renomear subcategoria atualiza automaticamente todos os lançamentos vinculados
+- Categorias isoladas por usuário e persistidas no Firestore
 
 ## Tecnologias
 
@@ -61,18 +68,20 @@ controle-gastos/
 │   ├── state.js          # Estado global e persistência (Firestore)
 │   ├── finance.js        # Cálculos financeiros (funções puras)
 │   ├── render.js         # Dashboard e tabela anual
-│   ├── charts.js         # Gráficos Chart.js
+│   ├── charts.js         # Gráficos ApexCharts
 │   ├── modals.js         # Modais de lançamento, salário e subcategoria
 │   ├── app.js            # Entry point e navegação
 │   ├── login.js          # Lógica da tela de login
 │   ├── register.js       # Lógica da tela de cadastro
 │   ├── profile.js        # Lógica da página de perfil
-│   └── admin.js          # Lógica do painel administrativo
+│   ├── admin.js          # Lógica do painel administrativo
+│   └── categories.js     # Lógica do gerenciamento de categorias
 ├── index.html            # App principal
 ├── login.html            # Tela de login
 ├── register.html         # Tela de cadastro
 ├── profile.html          # Página de perfil do usuário
 ├── admin.html            # Painel administrativo
+├── categories.html       # Gerenciamento de categorias
 ├── firestore.rules       # Regras de segurança do Firestore
 ├── vite.config.js
 └── package.json
