@@ -97,8 +97,7 @@ body {
 .main {
   padding: 20px;
   flex: 1;
-  max-width: 1200px;
-  width: 100%;
+  width: min(100%, 1600px);
   margin: 0 auto;
 }
 
