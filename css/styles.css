@@ -752,3 +752,101 @@ input:focus, select:focus {
 
 .table-loading { text-align: center; color: var(--text-2); padding: 32px !important; }
 .auth-link a:hover { text-decoration: underline; }
+
+/* ================================================================
+   PÁGINA DE CATEGORIAS
+   ================================================================ */
+.page-loading {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; color: var(--text-2); font-size: 14px;
+  background: var(--bg);
+}
+.header-title {
+  font-size: 15px; font-weight: 600; color: var(--text);
+}
+.header-left {
+  display: flex; align-items: center; gap: 14px;
+}
+.cats-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px; gap: 12px; flex-wrap: wrap;
+}
+.cats-hint {
+  font-size: 13px; color: var(--text-2); margin: 0;
+}
+
+/* Card de categoria */
+.cat-mgr-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.cat-mgr-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 0.5px solid var(--border);
+}
+.cat-mgr-dot {
+  width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+}
+.cat-mgr-name {
+  font-size: 14px; font-weight: 600; color: var(--text); flex: 1;
+}
+.cat-mgr-badge {
+  font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 20px;
+  white-space: nowrap;
+}
+.badge-expense { background: #fde8e8; color: #c0392b; border: 0.5px solid #f5c6cb; }
+.badge-invest  { background: #d4f5eb; color: #1D9E75; border: 0.5px solid #b2dfce; }
+.cat-mgr-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* Subcategorias */
+.cat-mgr-subcats { padding: 12px 16px; }
+.cat-mgr-subcats-label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--text-3);
+  margin-bottom: 8px;
+}
+.cat-mgr-subcat-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 0;
+  border-bottom: 0.5px solid var(--border);
+}
+.cat-mgr-subcat-row:last-child { border-bottom: none; }
+.subcat-row-name { font-size: 13px; color: var(--text); flex: 1; }
+.subcat-row-count {
+  font-size: 11px; color: var(--text-3);
+  background: var(--surface-2); border-radius: 10px;
+  padding: 1px 7px;
+}
+.subcat-row-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+/* Linha de adicionar subcategoria */
+.cat-mgr-add-row {
+  display: flex; gap: 8px; align-items: center;
+  margin-top: 10px;
+}
+.input-sm { height: 32px; padding: 0 10px; font-size: 13px; }
+
+/* Modal de categoria */
+.color-picker-row {
+  display: flex; align-items: center; gap: 12px;
+}
+.color-input {
+  width: 48px; height: 36px; padding: 2px;
+  border: 0.5px solid var(--border-md); border-radius: 6px;
+  background: var(--surface-2); cursor: pointer;
+}
+.color-hex { font-size: 13px; color: var(--text-2); font-family: monospace; }
+.color-swatch {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 0.5px solid var(--border-md); flex-shrink: 0;
+}
+.form-label--check {
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer; font-size: 13px;
+}
+.form-msg { font-size: 13px; color: var(--danger); min-height: 18px; margin-top: 4px; }

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Categorias — Controle de Gastos</title>
+  <script type="module" src="/js/categories.js"></script>
+</head>
+<body>
+
+<div id="page-loading" class="page-loading">Carregando...</div>
+
+<div id="page-content" style="display:none">
+
+  <header class="header">
+    <div class="header-left">
+      <a id="back-link" href="index.html" class="back-link">← Voltar</a>
+      <span class="header-title">Categorias</span>
+    </div>
+    <div id="user-info" class="user-info"></div>
+  </header>
+
+  <main class="main">
+
+    <div class="cats-toolbar">
+      <p class="cats-hint">Gerencie suas categorias e subcategorias de lançamentos.</p>
+      <button class="btn btn-primary" onclick="openAddCatModal()">+ Nova categoria</button>
+    </div>
+
+    <div id="cat-list"></div>
+
+  </main>
+
+</div>
+
+<!-- Modal: adicionar / editar categoria -->
+<div id="modal-cat" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-cat-title" class="modal-title">Nova Categoria</h2>
+      <button class="modal-close" onclick="closeCatModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="form-group">
+        <label class="form-label">Nome *</label>
+        <input id="cat-form-name" type="text" class="input" placeholder="Ex: Lazer">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Cor</label>
+        <div class="color-picker-row">
+          <input id="cat-form-color" type="color" value="#534AB7" class="color-input"
+                 oninput="previewCatColor()">
+          <span id="cat-color-hex" class="color-hex">#534AB7</span>
+          <span id="cat-color-swatch" class="color-swatch" style="background:#534AB7"></span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label form-label--check">
+          <input id="cat-form-expense" type="checkbox" checked>
+          É uma despesa (entra no total de gastos)
+        </label>
+      </div>
+
+      <p id="cat-form-msg" class="form-msg"></p>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveCatForm()">Salvar</button>
+      <button class="btn" onclick="closeCatModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

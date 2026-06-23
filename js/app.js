@@ -79,6 +79,7 @@ function renderHeader(user, profile) {
     <a href="${BASE}profile.html" class="user-name-link" title="Minha conta">
       <span class="user-name">${name}</span>${badge}
     </a>
+    <a href="${BASE}categories.html" class="btn">Categorias</a>
     ${adminLink}
   `;
 }

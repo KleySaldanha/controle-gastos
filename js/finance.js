@@ -1,5 +1,5 @@
-import { CATEGORIES, MONTHS } from './config.js';
-import { getEntries, getSalary } from './state.js';
+import { MONTHS } from './config.js';
+import { getEntries, getSalary, getCategories } from './state.js';
 
 export function catTotal(catId, year, month) {
   return getEntries(year, month)
@@ -8,13 +8,13 @@ export function catTotal(catId, year, month) {
 }
 
 export function totalGastos(year, month) {
-  return CATEGORIES
+  return getCategories()
     .filter(cat => cat.isExpense)
     .reduce((acc, cat) => acc + catTotal(cat.id, year, month), 0);
 }
 
 export function totalAlocado(year, month) {
-  return CATEGORIES.reduce((acc, cat) => acc + catTotal(cat.id, year, month), 0);
+  return getCategories().reduce((acc, cat) => acc + catTotal(cat.id, year, month), 0);
 }
 
 export function getLiquid(year, month) {

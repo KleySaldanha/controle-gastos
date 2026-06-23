@@ -1,5 +1,5 @@
-import { CATEGORIES, MONTHS } from './config.js';
-import { state, getEntries, getSalary, setSalary, addEntry, updateEntry, removeEntry } from './state.js';
+import { MONTHS } from './config.js';
+import { state, getEntries, getSalary, setSalary, addEntry, updateEntry, removeEntry, getCategories } from './state.js';
 import { fmt } from './finance.js';
 import { render } from './render.js';
 
@@ -34,12 +34,12 @@ export function initModals() {
 
 export function populateCatSelect() {
   document.getElementById('entry-cat').innerHTML =
-    CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    getCategories().map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 }
 
 export function populateSubcats() {
   const catId = document.getElementById('entry-cat').value;
-  const cat   = CATEGORIES.find(c => c.id === catId);
+  const cat   = getCategories().find(c => c.id === catId);
   document.getElementById('entry-subcat').innerHTML =
     cat.subcats.map(s => `<option value="${s}">${s}</option>`).join('');
 }
@@ -140,7 +140,7 @@ export function openEditSubcat(catId, subcat) {
 export function renderSubcatModal() {
   const { catId, subcat } = subcatContext;
   const { year, month }   = state;
-  const cat     = CATEGORIES.find(c => c.id === catId);
+  const cat     = getCategories().find(c => c.id === catId);
   const entries = getEntries(year, month).filter(
     e => e.catId === catId && e.subcat === subcat
   );

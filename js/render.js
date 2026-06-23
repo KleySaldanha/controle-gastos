@@ -1,5 +1,5 @@
-import { CATEGORIES, MONTHS } from './config.js';
-import { state, getEntries, getSalary } from './state.js';
+import { MONTHS } from './config.js';
+import { state, getEntries, getSalary, getCategories } from './state.js';
 import { catTotal, totalGastos, getLiquid, pct, fmt } from './finance.js';
 
 export function render() {
@@ -15,17 +15,25 @@ export function render() {
 }
 
 function renderSalaryBar(sal, liquid, isAllMonths, year, month) {
+  const cats = getCategories();
+
   document.getElementById('salary-label').textContent =
     isAllMonths ? `Salário anual: ${fmt(sal)}` : `Salário líquido: ${fmt(sal)}`;
 
   const liqEl = document.getElementById('liquid-label');
-  liqEl.textContent  = `Líquido: ${liquid < 0 ? '-' : ''}${fmt(liquid)}`;
-  liqEl.style.color  = liquid >= 0 ? 'var(--success)' : 'var(--danger)';
+  liqEl.textContent = `Líquido: ${liquid < 0 ? '-' : ''}${fmt(liquid)}`;
+  liqEl.style.color = liquid >= 0 ? 'var(--success)' : 'var(--danger)';
 
-  CATEGORIES.forEach(cat => {
+  document.getElementById('salary-bar-track').innerHTML = cats.map(cat => {
     const w = sal ? Math.min(pct(catTotal(cat.id, year, month), sal), 100) : 0;
-    document.getElementById('bar-' + cat.id).style.width = w.toFixed(1) + '%';
-  });
+    return `<div class="salary-bar-seg" style="background:${cat.color}; width:${w.toFixed(1)}%"></div>`;
+  }).join('');
+
+  document.getElementById('salary-legend').innerHTML = cats.map(cat =>
+    `<span class="chart-legend-item">
+       <span class="chart-legend-dot" style="background:${cat.color}"></span>${cat.name}
+     </span>`
+  ).join('');
 }
 
 function renderMetrics(sal, total, liquid, isAllMonths, year, month) {
@@ -33,19 +41,25 @@ function renderMetrics(sal, total, liquid, isAllMonths, year, month) {
 
   const primary = [
     { label: 'Salário líquido', value: sal,    cls: '',  dot: '#888' },
-    { label: 'Total gastos',    value: total,  cls: '',  dot: '#D85A30', tip: 'Fixos + Variáveis + Reserva Financeira + Objetivos' },
-    { label: 'Líquido',         value: liquid, cls: liquid >= 0 ? 'positive' : 'negative', dot: liquid >= 0 ? '#639922' : '#E24B4A' },
-    { label: isAllMonths ? '% Gastos anual' : '% Gastos', value: pct(total, sal), cls: '', dot: '#888', isPct: true,
-      tip: isAllMonths ? 'Fixos + Variáveis + Reserva Financeira + Objetivos ÷ Salário anual' : 'Fixos + Variáveis + Reserva Financeira + Objetivos ÷ Salário' },
+    { label: 'Total gastos',    value: total,  cls: '',  dot: '#D85A30',
+      tip: 'Fixos + Variáveis + Reserva Financeira + Objetivos' },
+    { label: 'Líquido', value: liquid,
+      cls: liquid >= 0 ? 'positive' : 'negative',
+      dot: liquid >= 0 ? '#639922' : '#E24B4A' },
+    { label: isAllMonths ? '% Gastos anual' : '% Gastos',
+      value: pct(total, sal), cls: '', dot: '#888', isPct: true,
+      tip: isAllMonths
+        ? 'Fixos + Variáveis + Reserva Financeira + Objetivos ÷ Salário anual'
+        : 'Fixos + Variáveis + Reserva Financeira + Objetivos ÷ Salário' },
   ];
 
-  const secondary = [
-    { label: 'Gastos fixos',        value: catTotal('fixed',    year, month), cls: '', dot: 'var(--fixed)' },
-    { label: 'Gastos variáveis',    value: catTotal('variable', year, month), cls: '', dot: 'var(--variable)' },
-    { label: 'Reserva Financeira',  value: catTotal('reserve',  year, month), cls: '', dot: 'var(--reserve)' },
-    { label: 'Objetivos',           value: catTotal('goals',    year, month), cls: '', dot: 'var(--goals)' },
-    { label: 'Investimentos',       value: totalInvest, cls: '', dot: 'var(--invest)', tip: 'Não entra nos gastos' },
-  ];
+  const secondary = getCategories().map(cat => ({
+    label: cat.name,
+    value: catTotal(cat.id, year, month),
+    cls:   '',
+    dot:   cat.color,
+    tip:   cat.isExpense ? undefined : 'Não entra nos gastos',
+  }));
 
   const cardHtml = (m, big) => `
     <div class="metric-card${big ? ' metric-card--primary' : ''}" ${m.tip ? `title="${m.tip}"` : ''}>
@@ -65,9 +79,10 @@ function renderMetrics(sal, total, liquid, isAllMonths, year, month) {
 }
 
 export function renderCategories(year, month, sal) {
+  const cats     = getCategories();
   const totalExp = totalGastos(year, month);
   document.getElementById('categories-grid').innerHTML =
-    CATEGORIES.map(cat => renderCategoryCard(cat, year, month, sal, totalExp)).join('');
+    cats.map(cat => renderCategoryCard(cat, year, month, sal, totalExp)).join('');
 }
 
 function renderCategoryCard(cat, year, month, sal, totalExp) {
@@ -77,10 +92,10 @@ function renderCategoryCard(cat, year, month, sal, totalExp) {
   const entries = getEntries(year, month).filter(e => e.catId === cat.id);
 
   const bySub = {};
-  cat.subcats.forEach(s => bySub[s] = 0);
+  cat.subcats.forEach(s => { bySub[s] = 0; });
   entries.forEach(e => { bySub[e.subcat] = (bySub[e.subcat] || 0) + e.value; });
 
-  const rows    = cat.subcats.map(s => ({ name: s, value: bySub[s] || 0 }));
+  const rows   = cat.subcats.map(s => ({ name: s, value: bySub[s] || 0 }));
   const hasData = rows.some(r => r.value > 0);
   const shown   = hasData ? rows.filter(r => r.value > 0) : rows.slice(0, 4);
 
@@ -88,39 +103,35 @@ function renderCategoryCard(cat, year, month, sal, totalExp) {
   <div class="cat-card">
     <div class="cat-header">
       <div class="cat-title">
-        ${cat.id !== 'invest' ? `<span class="cat-badge" style="background:${cat.bg};color:${cat.color}" title="% do total de gastos">${pctExp.toFixed(1)}%</span>` : ''}
+        ${cat.isExpense
+          ? `<span class="cat-badge" style="background:${cat.bg};color:${cat.color}" title="% do total de gastos">${pctExp.toFixed(1)}%</span>`
+          : ''}
         ${cat.name}
       </div>
       <div class="cat-total" style="color:${cat.color}">${fmt(catTot)}</div>
     </div>
     <div class="cat-progress">
-      <div class="cat-progress-fill"
-           style="background:${cat.color}; width:${Math.min(pctSal, 100).toFixed(1)}%">
-      </div>
+      <div class="cat-progress-fill" style="background:${cat.color}; width:${Math.min(pctSal, 100).toFixed(1)}%"></div>
     </div>
     <div class="cat-items">
       ${shown.map(row => `
         <div class="cat-item" onclick="openEditSubcat('${cat.id}','${row.name}')">
           <span class="cat-item-name">${row.name}</span>
           <div class="cat-item-bar">
-            <div class="cat-item-bar-fill"
-                 style="background:${cat.color}; width:${pct(row.value, catTot).toFixed(1)}%">
-            </div>
+            <div class="cat-item-bar-fill" style="background:${cat.color}; width:${pct(row.value, catTot).toFixed(1)}%"></div>
           </div>
-          <span class="cat-item-value"
-                style="color:${row.value > 0 ? cat.color : 'var(--text-3)'}">
+          <span class="cat-item-value" style="color:${row.value > 0 ? cat.color : 'var(--text-3)'}">
             ${row.value > 0 ? fmt(row.value) : '—'}
           </span>
         </div>`).join('')}
     </div>
-    <button class="cat-add" onclick="openAddModal('${cat.id}')">
-      + adicionar lançamento
-    </button>
+    <button class="cat-add" onclick="openAddModal('${cat.id}')">+ adicionar lançamento</button>
   </div>`;
 }
 
 export function renderAnnual() {
-  const y = state.year;
+  const y    = state.year;
+  const cats = getCategories();
 
   document.getElementById('annual-thead').innerHTML = `<tr>
     <th style="text-align:left">Categoria</th>
@@ -138,7 +149,7 @@ export function renderAnnual() {
     <td>${fmt(salTotal)}</td>
   </tr>`;
 
-  CATEGORIES.forEach(cat => {
+  cats.forEach(cat => {
     const catMonths = MONTHS.map((_, m) => catTotal(cat.id, y, m));
     const catAnual  = catMonths.reduce((a, b) => a + b, 0);
 
@@ -168,7 +179,7 @@ export function renderAnnual() {
   const totMonths = MONTHS.map((_, m) => totalGastos(y, m));
   const totAnual  = totMonths.reduce((a, b) => a + b, 0);
   rows += `<tr class="cat-row" style="border-top:2px solid var(--border)">
-    <td>Total gastos (Fixos + Variáveis + Reservas)</td>
+    <td>Total gastos</td>
     ${totMonths.map(v => `<td>${fmt(v)}</td>`).join('')}
     <td>${fmt(totAnual)}</td>
   </tr>`;
@@ -180,9 +191,7 @@ export function renderAnnual() {
     ${liqMonths.map(v =>
       `<td class="${v >= 0 ? 'positive' : 'negative'}">${v < 0 ? '-' : ''}${fmt(v)}</td>`
     ).join('')}
-    <td class="${liqAnual >= 0 ? 'positive' : 'negative'}">
-      ${liqAnual < 0 ? '-' : ''}${fmt(liqAnual)}
-    </td>
+    <td class="${liqAnual >= 0 ? 'positive' : 'negative'}">${liqAnual < 0 ? '-' : ''}${fmt(liqAnual)}</td>
   </tr>`;
 
   document.getElementById('annual-tbody').innerHTML = rows;

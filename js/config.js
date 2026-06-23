@@ -1,19 +1,28 @@
 /** @typedef {Object} Category
  * @property {string}   id
  * @property {string}   name
- * @property {string}   color
- * @property {string}   bg
+ * @property {string}   color  hex
+ * @property {string}   bg     hex (light tint)
  * @property {boolean}  isExpense
  * @property {string[]} subcats
  */
+
+/** Gera um fundo claro a partir de uma cor hex */
+export function computeBg(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const m = (c) => Math.round(c * 0.18 + 255 * 0.82).toString(16).padStart(2, '0');
+  return `#${m(r)}${m(g)}${m(b)}`;
+}
 
 /** @type {Category[]} */
 export const CATEGORIES = [
   {
     id: 'fixed',
     name: 'Gastos Fixos',
-    color: 'var(--fixed)',
-    bg:    'var(--fixed-bg)',
+    color: '#534AB7',
+    bg:    '#EEEDFE',
     isExpense: true,
     subcats: [
       'Energia',
@@ -33,8 +42,8 @@ export const CATEGORIES = [
   {
     id: 'variable',
     name: 'Gastos Variáveis',
-    color: 'var(--variable)',
-    bg:    'var(--variable-bg)',
+    color: '#D85A30',
+    bg:    '#FAECE7',
     isExpense: true,
     subcats: [
       'Taxa CC',
@@ -51,8 +60,8 @@ export const CATEGORIES = [
   {
     id: 'reserve',
     name: 'Reserva Financeira',
-    color: 'var(--reserve)',
-    bg:    'var(--reserve-bg)',
+    color: '#185FA5',
+    bg:    '#E6F1FB',
     isExpense: true,
     subcats: [
       'Emergência',
@@ -63,8 +72,8 @@ export const CATEGORIES = [
   {
     id: 'goals',
     name: 'Objetivos',
-    color: 'var(--goals)',
-    bg:    'var(--goals-bg)',
+    color: '#0891B2',
+    bg:    '#E0F4F8',
     isExpense: true,
     subcats: [
       'Imóvel',
@@ -79,8 +88,8 @@ export const CATEGORIES = [
   {
     id: 'invest',
     name: 'Investimentos',
-    color: 'var(--invest)',
-    bg:    'var(--invest-bg)',
+    color: '#1D9E75',
+    bg:    '#E1F5EE',
     isExpense: false,
     subcats: [
       'Porquinho Nubank',
@@ -100,6 +109,3 @@ export const MONTHS = [
 ];
 
 export const STORAGE_KEY = 'cgastos_v1';
-
-// Ordem: fixed, variable, reserve, goals, invest
-export const CHART_COLORS = ['#534AB7', '#D85A30', '#185FA5', '#0891B2', '#1D9E75'];
