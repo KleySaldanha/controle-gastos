@@ -1,6 +1,6 @@
 # 💰 Controle de Gastos
 
-Aplicação web para gestão financeira pessoal com autenticação de usuários. Permite registrar lançamentos por categoria, acompanhar o orçamento mensal e visualizar gráficos de evolução ao longo do ano.
+Aplicação web para gestão financeira pessoal com autenticação de usuários. Permite registrar lançamentos por categoria, acompanhar o orçamento mensal, visualizar gráficos de evolução ao longo do ano e gerenciar categorias personalizadas por usuário.
 
 🔗 **[Acesse o app](https://kleysaldanha.github.io/controle-gastos/)**
 
