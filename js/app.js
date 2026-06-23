@@ -72,14 +72,14 @@ function renderHeader(user, profile) {
     ? '<span class="role-badge admin">Admin</span>'
     : '<span class="role-badge">Usuário</span>';
   const adminLink  = isAdmin
-    ? `<a href="${BASE}admin.html" class="btn">Usuários</a>`
+    ? `<a href="${BASE}admin.html" class="btn-nav">👥 Usuários</a>`
     : '';
 
   document.getElementById('user-info').innerHTML = `
     <a href="${BASE}profile.html" class="user-name-link" title="Minha conta">
       <span class="user-name">${name}</span>${badge}
     </a>
-    <a href="${BASE}categories.html" class="btn">Categorias</a>
+    <a href="${BASE}categories.html" class="btn-nav">🏷️ Categorias</a>
     ${adminLink}
   `;
 }

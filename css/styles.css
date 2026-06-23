@@ -129,19 +129,36 @@ body {
   top: 0;
   z-index: 100;
 }
-.header-left { display: flex; align-items: center; gap: 10px; }
+.header-left { display: flex; align-items: center; gap: 12px; }
 
 /* Ícone quadrado com emoji */
 .header-logo {
-  width: 32px; height: 32px;
+  width: 40px; height: 40px;
   background: var(--invest);
   border-radius: var(--radius);
   display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 18px;
+  color: #fff; font-size: 22px;
+  flex-shrink: 0;
 }
-.header-title    { font-size: 15px; font-weight: 600; }
-.header-subtitle { font-size: 12px; color: var(--text-2); }
+.header-title    { font-size: 19px; font-weight: 700; letter-spacing: -0.3px; }
+.header-subtitle { font-size: 13px; color: var(--text-2); margin-top: 1px; }
 .header-right    { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* Botões de navegação no header (Categorias, Usuários) */
+.btn-nav {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 20px;
+  font-size: 13px; font-weight: 500;
+  color: var(--text-2);
+  border: 0.5px solid var(--border-md);
+  background: var(--surface-2);
+  text-decoration: none; cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.btn-nav:hover {
+  background: var(--invest); color: #fff; border-color: var(--invest);
+}
 
 /* Grupo de label + select (ex: "Mês [select]") */
 .select-group { display: flex; align-items: center; gap: 6px; }
