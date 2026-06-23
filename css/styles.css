@@ -750,7 +750,8 @@ input:focus, select:focus {
 
 .td-name    { min-width: 200px; }
 .td-since   { color: var(--text-2); white-space: nowrap; }
-.td-actions { display: flex; gap: 6px; flex-wrap: nowrap; align-items: center; white-space: nowrap; }
+.td-actions { vertical-align: middle; white-space: nowrap; }
+.td-actions-inner { display: flex; gap: 6px; align-items: center; }
 
 .user-row-name  { font-weight: 500; color: var(--text); }
 .user-row-email { font-size: 12px; color: var(--text-2); }

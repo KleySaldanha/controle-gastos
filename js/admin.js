@@ -64,9 +64,11 @@ function renderRow(u) {
       <td>${activeBadge}</td>
       <td class="td-since">${u.createdAt ? new Date(u.createdAt).toLocaleDateString('pt-BR') : '—'}</td>
       <td class="td-actions">
-        <button class="btn btn-sm" onclick="openEditModal('${u.uid}','${(u.name||'').replace(/'/g,"\\'")}','${u.email}')">Editar</button>
-        ${roleBtn}
-        ${activeBtn}
+        <div class="td-actions-inner">
+          <button class="btn btn-sm" onclick="openEditModal('${u.uid}','${(u.name||'').replace(/'/g,"\\'")}','${u.email}')">Editar</button>
+          ${roleBtn}
+          ${activeBtn}
+        </div>
       </td>
     </tr>`;
 }
