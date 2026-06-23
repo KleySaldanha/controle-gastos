@@ -29,22 +29,22 @@ function renderSalaryBar(sal, liquid, isAllMonths, year, month) {
 }
 
 function renderMetrics(sal, total, liquid, isAllMonths, year, month) {
-  const totalInvest  = catTotal('invest',   year, month);
-  const totalReserve = catTotal('reserve',  year, month);
+  const totalInvest = catTotal('invest', year, month);
 
   const primary = [
     { label: 'Salário líquido', value: sal,    cls: '',  dot: '#888' },
-    { label: 'Total gastos',    value: total,  cls: '',  dot: '#D85A30', tip: 'Fixos + Variáveis + Reservas/Objetivos' },
+    { label: 'Total gastos',    value: total,  cls: '',  dot: '#D85A30', tip: 'Fixos + Variáveis + Reserva Financeira + Objetivos' },
     { label: 'Líquido',         value: liquid, cls: liquid >= 0 ? 'positive' : 'negative', dot: liquid >= 0 ? '#639922' : '#E24B4A' },
     { label: isAllMonths ? '% Gastos anual' : '% Gastos', value: pct(total, sal), cls: '', dot: '#888', isPct: true,
-      tip: isAllMonths ? 'Fixos + Variáveis + Reservas ÷ Salário anual' : 'Fixos + Variáveis + Reservas ÷ Salário' },
+      tip: isAllMonths ? 'Fixos + Variáveis + Reserva Financeira + Objetivos ÷ Salário anual' : 'Fixos + Variáveis + Reserva Financeira + Objetivos ÷ Salário' },
   ];
 
   const secondary = [
-    { label: 'Gastos fixos',       value: catTotal('fixed',    year, month), cls: '', dot: 'var(--fixed)' },
-    { label: 'Gastos variáveis',   value: catTotal('variable', year, month), cls: '', dot: 'var(--variable)' },
-    { label: 'Reservas/Objetivos', value: totalReserve, cls: '', dot: 'var(--reserve)' },
-    { label: 'Investimentos',      value: totalInvest,  cls: '', dot: 'var(--invest)', tip: 'Não entra nos gastos' },
+    { label: 'Gastos fixos',        value: catTotal('fixed',    year, month), cls: '', dot: 'var(--fixed)' },
+    { label: 'Gastos variáveis',    value: catTotal('variable', year, month), cls: '', dot: 'var(--variable)' },
+    { label: 'Reserva Financeira',  value: catTotal('reserve',  year, month), cls: '', dot: 'var(--reserve)' },
+    { label: 'Objetivos',           value: catTotal('goals',    year, month), cls: '', dot: 'var(--goals)' },
+    { label: 'Investimentos',       value: totalInvest, cls: '', dot: 'var(--invest)', tip: 'Não entra nos gastos' },
   ];
 
   const cardHtml = (m, big) => `

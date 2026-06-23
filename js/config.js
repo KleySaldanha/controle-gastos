@@ -11,7 +11,7 @@
 export const CATEGORIES = [
   {
     id: 'fixed',
-    name: 'Gastos Fixos/Essências',
+    name: 'Gastos Fixos',
     color: 'var(--fixed)',
     bg:    'var(--fixed-bg)',
     isExpense: true,
@@ -50,9 +50,21 @@ export const CATEGORIES = [
   },
   {
     id: 'reserve',
-    name: 'Reserva Financeira/Objetivos',
+    name: 'Reserva Financeira',
     color: 'var(--reserve)',
     bg:    'var(--reserve-bg)',
+    isExpense: true,
+    subcats: [
+      'Emergência',
+      'Aposentadoria',
+      'Investimentos',
+    ],
+  },
+  {
+    id: 'goals',
+    name: 'Objetivos',
+    color: 'var(--goals)',
+    bg:    'var(--goals-bg)',
     isExpense: true,
     subcats: [
       'Imóvel',
@@ -61,9 +73,6 @@ export const CATEGORIES = [
       'Moto',
       'Itens de Casa',
       'Estudos',
-      'Emergencia',
-      'Aposentadoria',
-      'Investimentos',
       'Emp. Contas Invest',
     ],
   },
@@ -92,5 +101,5 @@ export const MONTHS = [
 
 export const STORAGE_KEY = 'cgastos_v1';
 
-// Ordem: fixed, variable, reserve, invest
-export const CHART_COLORS = ['#534AB7', '#D85A30', '#185FA5', '#1D9E75'];
+// Ordem: fixed, variable, reserve, goals, invest
+export const CHART_COLORS = ['#534AB7', '#D85A30', '#185FA5', '#0891B2', '#1D9E75'];

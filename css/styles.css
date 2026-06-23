@@ -47,15 +47,17 @@
   --radius:    8px;
   --radius-lg: 12px;
 
-  /* Paleta semântica das 4 categorias financeiras */
+  /* Paleta semântica das categorias financeiras */
   --invest:      #1D9E75;   /* teal   — investimentos */
   --invest-bg:   #E1F5EE;
   --fixed:       #534AB7;   /* purple — gastos fixos */
   --fixed-bg:    #EEEDFE;
   --variable:    #D85A30;   /* coral  — gastos variáveis */
   --variable-bg: #FAECE7;
-  --reserve:     #185FA5;   /* blue   — reservas/objetivos */
+  --reserve:     #185FA5;   /* blue   — reserva financeira */
   --reserve-bg:  #E6F1FB;
+  --goals:       #0891B2;   /* cyan   — objetivos */
+  --goals-bg:    #E0F4F8;
 
   /* Semântica de status */
   --success: #639922;
@@ -197,7 +199,7 @@ select {
 }
 .metrics-secondary {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 10px;
   margin-bottom: 20px;
 }
