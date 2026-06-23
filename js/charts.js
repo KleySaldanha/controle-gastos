@@ -36,12 +36,22 @@ function brlShort(val) {
 
 function commonChart(height = 280) {
   return {
+    width:            '100%',
     height,
-    background:  'transparent',
-    toolbar:     { show: false },
-    zoom:        { enabled: false },
-    fontFamily:  'inherit',
-    animations:  { enabled: true, speed: 350, animateGradually: { enabled: false } },
+    background:       'transparent',
+    toolbar:          { show: false },
+    zoom:             { enabled: false },
+    fontFamily:       'inherit',
+    parentHeightOffset: 0,
+    animations:       { enabled: true, speed: 350, animateGradually: { enabled: false } },
+  };
+}
+
+function commonGrid() {
+  return {
+    borderColor:    css('--border') || '#2a2a3e',
+    strokeDashArray: 4,
+    padding:        { left: 4, right: 4 },
   };
 }
 
@@ -116,7 +126,7 @@ function renderLineChart(year) {
     yaxis: {
       labels: { style: { colors: css('--text-2') || '#888' }, formatter: brlShort },
     },
-    grid:    { borderColor: css('--border') || '#2a2a3e', strokeDashArray: 4 },
+    grid:    commonGrid(),
     stroke:  { width: 2, curve: 'smooth' },
     markers: { size: 3 },
     tooltip: { theme: 'dark', y: { formatter: val => fmt(val) } },
@@ -152,7 +162,7 @@ function renderBarChart(year) {
     yaxis: {
       labels: { style: { colors: css('--text-2') || '#888' }, formatter: brlShort },
     },
-    grid:   { borderColor: css('--border') || '#2a2a3e', strokeDashArray: 4 },
+    grid:   commonGrid(),
     stroke: { show: true, width: 1, colors: ['transparent'] },
     plotOptions: { bar: { columnWidth: '70%', borderRadius: 2 } },
     tooltip:    { theme: 'dark', y: { formatter: val => fmt(val) } },
@@ -190,7 +200,7 @@ function renderLiquidChart(year) {
         formatter: v => (v < 0 ? '-' : '') + brlShort(Math.abs(v)),
       },
     },
-    grid:   { borderColor: css('--border') || '#2a2a3e', strokeDashArray: 4 },
+    grid:   commonGrid(),
     stroke: { show: false },
     plotOptions: { bar: { columnWidth: '65%', borderRadius: 2 } },
     tooltip:    { theme: 'dark', y: { formatter: val => (val < 0 ? '-' : '') + fmt(Math.abs(val)) } },
@@ -247,7 +257,7 @@ function renderInvestChart(year) {
         labels: { style: { colors: css('--text-2') || '#888' }, formatter: v => v !== null ? v + '%' : '' },
       },
     ],
-    grid:    { borderColor: css('--border') || '#2a2a3e', strokeDashArray: 4 },
+    grid:    commonGrid(),
     stroke:  { width: [2, 2], curve: 'smooth', dashArray: [0, 5] },
     markers: { size: 4 },
     fill: {

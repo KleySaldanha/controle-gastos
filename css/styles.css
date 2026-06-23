@@ -367,9 +367,9 @@ table.annual tr:hover td { background: var(--surface-2); }
   background: var(--surface);
   border: 0.5px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: 16px 8px 8px;
 }
-.chart-card-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+.chart-card-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; padding: 0 8px; }
 
 
 /* ============================================================
