@@ -800,6 +800,7 @@ input:focus, select:focus {
 .user-row-email { font-size: 12px; color: var(--text-2); }
 
 .btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-icon-only { padding: 4px 7px; font-size: 14px; line-height: 1; }
 
 .status-badge {
   font-size: 11px; font-weight: 600;

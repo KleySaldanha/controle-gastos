@@ -104,7 +104,7 @@ function renderSubcatRow(catId, name, idx) {
     <span class="subcat-row-name">${esc(name)}</span>
     ${count > 0 ? `<span class="subcat-row-count">${count} lanç.</span>` : ''}
     <div class="subcat-row-actions">
-      <button class="btn btn-sm" onclick="startEditSubcat('${catId}',${idx})">Renomear</button>
+      <button class="btn btn-sm btn-icon-only" title="Renomear" onclick="startEditSubcat('${catId}',${idx})">✏️</button>
       <button class="btn btn-sm btn-danger"
         onclick="deleteSubcat('${catId}',${idx})"
         ${!canDelete ? `disabled title="${count} lançamento(s)"` : ''}>×</button>
