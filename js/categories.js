@@ -90,7 +90,7 @@ function renderCatCard(cat) {
         <input type="text" id="new-sub-${cat.id}" class="input input-sm"
                placeholder="Nova subcategoria"
                onkeydown="if(event.key==='Enter') addSubcat('${cat.id}')">
-        <button class="btn btn-sm btn-primary" onclick="addSubcat('${cat.id}')">+ Adicionar</button>
+        <button class="btn btn-sm btn-primary btn-icon-only" title="Adicionar subcategoria" onclick="addSubcat('${cat.id}')">+</button>
       </div>
     </div>
   </div>`;
