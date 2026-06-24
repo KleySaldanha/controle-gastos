@@ -62,10 +62,20 @@ function renderAll() {
 function renderCatCard(cat) {
   const total = entryCount(cat.id);
   const canDelete = total === 0;
+  const cats = getCategories();
+  const idx  = cats.findIndex(c => c.id === cat.id);
+  const isFirst = idx === 0;
+  const isLast  = idx === cats.length - 1;
 
   return `
   <div class="cat-mgr-card" id="catcard-${cat.id}">
     <div class="cat-mgr-header">
+      <div class="cat-mgr-move">
+        <button class="btn-move" title="Mover para cima"
+          onclick="moveCat('${cat.id}',-1)" ${isFirst ? 'disabled' : ''}>▲</button>
+        <button class="btn-move" title="Mover para baixo"
+          onclick="moveCat('${cat.id}',1)"  ${isLast  ? 'disabled' : ''}>▼</button>
+      </div>
       <span class="cat-mgr-dot" style="background:${cat.color}"></span>
       <span class="cat-mgr-name">${esc(cat.name)}</span>
       <span class="cat-mgr-badge ${cat.isExpense ? 'badge-expense' : 'badge-invest'}">
@@ -97,10 +107,19 @@ function renderCatCard(cat) {
 }
 
 function renderSubcatRow(catId, name, idx) {
-  const count    = entryCount(catId, name);
+  const count     = entryCount(catId, name);
   const canDelete = count === 0;
+  const cat       = getCategories().find(c => c.id === catId);
+  const isFirst   = idx === 0;
+  const isLast    = idx === (cat?.subcats.length ?? 1) - 1;
   return `
   <div class="cat-mgr-subcat-row" data-catid="${catId}" data-idx="${idx}">
+    <div class="subcat-move">
+      <button class="btn-move btn-move-sm" title="Mover para cima"
+        onclick="moveSubcat('${catId}',${idx},-1)" ${isFirst ? 'disabled' : ''}>▲</button>
+      <button class="btn-move btn-move-sm" title="Mover para baixo"
+        onclick="moveSubcat('${catId}',${idx},1)"  ${isLast  ? 'disabled' : ''}>▼</button>
+    </div>
     <span class="subcat-row-name">${esc(name)}</span>
     ${count > 0 ? `<span class="subcat-row-count">${count} lanç.</span>` : ''}
     <div class="subcat-row-actions">
@@ -183,6 +202,16 @@ window.saveCatForm = () => {
   renderAll();
 };
 
+window.moveCat = (id, dir) => {
+  const cats = getCategories().slice();
+  const idx  = cats.findIndex(c => c.id === id);
+  const to   = idx + dir;
+  if (to < 0 || to >= cats.length) return;
+  [cats[idx], cats[to]] = [cats[to], cats[idx]];
+  setCategories(cats);
+  renderAll();
+};
+
 window.deleteCategory = (id) => {
   const count = entryCount(id);
   if (count > 0) { alert(`Esta categoria possui ${count} lançamento(s) e não pode ser excluída.`); return; }
@@ -238,6 +267,19 @@ window.saveSubcatRename = (catId, idx, oldName) => {
   if (newName === oldName) { reRenderSubcats(catId); return; }
 
   renameSubcat(catId, oldName, newName);
+  reRenderSubcats(catId);
+};
+
+window.moveSubcat = (catId, idx, dir) => {
+  const to = idx + dir;
+  const cats = getCategories().map(c => {
+    if (c.id !== catId) return c;
+    const subs = c.subcats.slice();
+    if (to < 0 || to >= subs.length) return c;
+    [subs[idx], subs[to]] = [subs[to], subs[idx]];
+    return { ...c, subcats: subs };
+  });
+  setCategories(cats);
   reRenderSubcats(catId);
 };
 
