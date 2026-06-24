@@ -107,10 +107,25 @@ export function deleteEntry() {
 export function openSalaryModal() {
   const current = getSalary(state.year, state.month);
   document.getElementById('salary-value').value = current || '';
-  // Mostrar botão remover só se há salário definido no mês atual
+  document.getElementById('salary-scope').value = 'month';
+  document.getElementById('salary-months-grid').style.display = 'none';
+
   const removeBtn = document.getElementById('btn-remove-salary');
   if (removeBtn) removeBtn.style.display = (current > 0 && state.month !== -1) ? '' : 'none';
   openModal('modal-salary');
+}
+
+export function onSalaryScopeChange() {
+  const scope = document.getElementById('salary-scope').value;
+  const grid  = document.getElementById('salary-months-grid');
+  grid.style.display = scope === 'specific' ? '' : 'none';
+
+  if (scope === 'specific') {
+    const cur = state.month === -1 ? new Date().getMonth() : state.month;
+    document.querySelectorAll('[name="salary-month"]').forEach(cb => {
+      cb.checked = parseInt(cb.value) >= cur;
+    });
+  }
 }
 
 export function removeSalary() {
@@ -131,8 +146,18 @@ export function saveSalary() {
     return;
   }
 
-  const targetMonth = scope === 'year' ? -1 : state.month;
-  setSalary(state.year, targetMonth, value);
+  if (scope === 'specific') {
+    const checked = [...document.querySelectorAll('[name="salary-month"]:checked')]
+      .map(cb => parseInt(cb.value));
+    if (checked.length === 0) {
+      showToast('Selecione ao menos um mês.');
+      return;
+    }
+    checked.forEach(m => setSalary(state.year, m, value));
+  } else {
+    const targetMonth = scope === 'year' ? -1 : state.month;
+    setSalary(state.year, targetMonth, value);
+  }
 
   closeModal('modal-salary');
   render();

@@ -6,7 +6,7 @@ import { renderCharts } from './charts.js';
 import {
   initModals, openAddModal, openSalaryModal,
   closeModal, saveEntry, deleteEntry,
-  saveSalary, removeSalary, populateCatSelect, populateSubcats,
+  saveSalary, removeSalary, onSalaryScopeChange, populateCatSelect, populateSubcats,
   clearSubcatContext, openEditSubcat,
   addFromSubcatModal, editEntryFromSubcat, deleteEntryFromSubcat,
   openCatAllEntries, editEntryFromCatAll, deleteEntryFromCatAll,
@@ -21,6 +21,7 @@ window.saveEntry             = saveEntry;
 window.deleteEntry           = deleteEntry;
 window.saveSalary            = saveSalary;
 window.removeSalary          = removeSalary;
+window.onSalaryScopeChange   = onSalaryScopeChange;
 window.populateSubcats       = populateSubcats;
 window.clearSubcatContext    = clearSubcatContext;
 window.openEditSubcat        = openEditSubcat;
