@@ -278,6 +278,23 @@
   </div>
 </div>
 
+<!-- Modal: todos os lançamentos de uma categoria -->
+<div class="modal-overlay" id="modal-cat-all" onclick="if(event.target===this) closeModal('modal-cat-all')">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div>
+        <span class="modal-title" id="cat-all-title"></span>
+        <div style="font-size:12px; color:var(--text-2); margin-top:2px">
+          <span id="cat-all-period"></span>
+          &nbsp;·&nbsp; Total: <strong id="cat-all-total"></strong>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-cat-all')">×</button>
+    </div>
+    <div class="modal-body" id="cat-all-list" style="max-height:420px; overflow-y:auto"></div>
+  </div>
+</div>
+
 <!-- Toast de feedback -->
 <div class="toast" id="toast"></div>
 

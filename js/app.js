@@ -9,6 +9,7 @@ import {
   saveSalary, populateCatSelect, populateSubcats,
   clearSubcatContext, openEditSubcat,
   addFromSubcatModal, editEntryFromSubcat, deleteEntryFromSubcat,
+  openCatAllEntries, editEntryFromCatAll, deleteEntryFromCatAll,
 } from './modals.js';
 import { onAuthChange, logout, getUserProfile, createAdminProfile } from './auth.js';
 
@@ -25,6 +26,9 @@ window.openEditSubcat        = openEditSubcat;
 window.addFromSubcatModal    = addFromSubcatModal;
 window.editEntryFromSubcat   = editEntryFromSubcat;
 window.deleteEntryFromSubcat = deleteEntryFromSubcat;
+window.openCatAllEntries     = openCatAllEntries;
+window.editEntryFromCatAll   = editEntryFromCatAll;
+window.deleteEntryFromCatAll = deleteEntryFromCatAll;
 window.switchTab             = switchTab;
 window.toggleFab             = toggleFab;
 window.closeFab              = closeFab;

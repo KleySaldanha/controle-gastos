@@ -95,9 +95,29 @@ function renderCategoryCard(cat, year, month, sal, totalExp) {
   cat.subcats.forEach(s => { bySub[s] = 0; });
   entries.forEach(e => { bySub[e.subcat] = (bySub[e.subcat] || 0) + e.value; });
 
-  const rows   = cat.subcats.map(s => ({ name: s, value: bySub[s] || 0 }));
-  const hasData = rows.some(r => r.value > 0);
-  const shown   = hasData ? rows.filter(r => r.value > 0) : rows.slice(0, 4);
+  // Subcategorias com valor > 0 (incluindo órfãs — existem em lançamentos mas não na lista)
+  const knownSet   = new Set(cat.subcats);
+  const rows       = cat.subcats.map(s => ({ name: s, value: bySub[s] || 0, orphan: false }));
+  const orphanRows = [...new Set(entries.map(e => e.subcat).filter(s => !knownSet.has(s)))]
+    .map(s => ({ name: s, value: bySub[s] || 0, orphan: true }));
+
+  const hasData = rows.some(r => r.value > 0) || orphanRows.length > 0;
+  const shown   = hasData
+    ? [...rows.filter(r => r.value > 0), ...orphanRows]
+    : rows.slice(0, 4);
+
+  const totalEntries = entries.length;
+
+  const rowHtml = (row) => `
+    <div class="cat-item ${row.orphan ? 'cat-item--orphan' : ''}" onclick="openEditSubcat('${cat.id}','${row.name.replace(/'/g,"\\'")}')">
+      <span class="cat-item-name">${row.name}${row.orphan ? ' <span class="orphan-tag" title="Subcategoria removida da lista">!</span>' : ''}</span>
+      <div class="cat-item-bar">
+        <div class="cat-item-bar-fill" style="background:${cat.color}; width:${pct(row.value, catTot).toFixed(1)}%"></div>
+      </div>
+      <span class="cat-item-value" style="color:${row.value > 0 ? cat.color : 'var(--text-3)'}">
+        ${row.value > 0 ? fmt(row.value) : '—'}
+      </span>
+    </div>`;
 
   return `
   <div class="cat-card">
@@ -114,18 +134,16 @@ function renderCategoryCard(cat, year, month, sal, totalExp) {
       <div class="cat-progress-fill" style="background:${cat.color}; width:${Math.min(pctSal, 100).toFixed(1)}%"></div>
     </div>
     <div class="cat-items">
-      ${shown.map(row => `
-        <div class="cat-item" onclick="openEditSubcat('${cat.id}','${row.name}')">
-          <span class="cat-item-name">${row.name}</span>
-          <div class="cat-item-bar">
-            <div class="cat-item-bar-fill" style="background:${cat.color}; width:${pct(row.value, catTot).toFixed(1)}%"></div>
-          </div>
-          <span class="cat-item-value" style="color:${row.value > 0 ? cat.color : 'var(--text-3)'}">
-            ${row.value > 0 ? fmt(row.value) : '—'}
-          </span>
-        </div>`).join('')}
+      ${shown.map(rowHtml).join('')}
     </div>
-    <button class="cat-add" onclick="openAddModal('${cat.id}')">+ adicionar lançamento</button>
+    <div class="cat-footer">
+      <button class="cat-add" onclick="openAddModal('${cat.id}')">+ adicionar lançamento</button>
+      ${totalEntries > 0
+        ? `<button class="cat-view-all" onclick="openCatAllEntries('${cat.id}')" title="Ver todos os lançamentos">
+             Ver todos (${totalEntries})
+           </button>`
+        : ''}
+    </div>
   </div>`;
 }
 
