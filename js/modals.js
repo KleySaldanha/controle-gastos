@@ -105,9 +105,21 @@ export function deleteEntry() {
 }
 
 export function openSalaryModal() {
-  document.getElementById('salary-value').value =
-    getSalary(state.year, state.month) || '';
+  const current = getSalary(state.year, state.month);
+  document.getElementById('salary-value').value = current || '';
+  // Mostrar botão remover só se há salário definido no mês atual
+  const removeBtn = document.getElementById('btn-remove-salary');
+  if (removeBtn) removeBtn.style.display = (current > 0 && state.month !== -1) ? '' : 'none';
   openModal('modal-salary');
+}
+
+export function removeSalary() {
+  if (state.month === -1) return;
+  if (!confirm('Remover o salário de ' + (state.month >= 0 ? document.getElementById('sel-month').options[state.month + 1]?.text : '') + '?')) return;
+  setSalary(state.year, state.month, 0);
+  closeModal('modal-salary');
+  render();
+  showToast('Salário removido.');
 }
 
 export function saveSalary() {
