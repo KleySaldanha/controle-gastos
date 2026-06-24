@@ -57,6 +57,10 @@ function entryCount(catId, subcat) {
 function renderAll() {
   document.getElementById('cat-list').innerHTML =
     getCategories().map(cat => renderCatCard(cat)).join('');
+  getCategories().forEach(cat => {
+    const container = document.getElementById(`subcats-${cat.id}`);
+    if (container) initSubcatDrag(container, cat.id);
+  });
 }
 
 function renderCatCard(cat) {
@@ -113,7 +117,9 @@ function renderSubcatRow(catId, name, idx) {
   const isFirst   = idx === 0;
   const isLast    = idx === (cat?.subcats.length ?? 1) - 1;
   return `
-  <div class="cat-mgr-subcat-row" data-catid="${catId}" data-idx="${idx}">
+  <div class="cat-mgr-subcat-row" draggable="true"
+       data-catid="${catId}" data-idx="${idx}">
+    <span class="subcat-drag-handle" title="Arrastar para reordenar">⠿</span>
     <div class="subcat-move">
       <button class="btn-move btn-move-sm" title="Mover para cima"
         onclick="moveSubcat('${catId}',${idx},-1)" ${isFirst ? 'disabled' : ''}>▲</button>
@@ -134,8 +140,51 @@ function renderSubcatRow(catId, name, idx) {
 function reRenderSubcats(catId) {
   const cat = getCategories().find(c => c.id === catId);
   if (!cat) return;
-  document.getElementById(`subcats-${catId}`).innerHTML =
-    cat.subcats.map((s, i) => renderSubcatRow(catId, s, i)).join('');
+  const container = document.getElementById(`subcats-${catId}`);
+  container.innerHTML = cat.subcats.map((s, i) => renderSubcatRow(catId, s, i)).join('');
+  initSubcatDrag(container, catId);
+}
+
+let dragSrc = null;
+
+function initSubcatDrag(container, catId) {
+  container.querySelectorAll('.cat-mgr-subcat-row').forEach(row => {
+    row.addEventListener('dragstart', e => {
+      dragSrc = row;
+      e.dataTransfer.effectAllowed = 'move';
+      row.classList.add('dragging');
+    });
+    row.addEventListener('dragend', () => {
+      dragSrc = null;
+      container.querySelectorAll('.cat-mgr-subcat-row').forEach(r => {
+        r.classList.remove('dragging', 'drag-over');
+      });
+    });
+    row.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (row !== dragSrc) {
+        container.querySelectorAll('.cat-mgr-subcat-row').forEach(r => r.classList.remove('drag-over'));
+        row.classList.add('drag-over');
+      }
+    });
+    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+    row.addEventListener('drop', e => {
+      e.preventDefault();
+      if (!dragSrc || dragSrc === row) return;
+      const fromIdx = parseInt(dragSrc.dataset.idx);
+      const toIdx   = parseInt(row.dataset.idx);
+      const cats = getCategories().map(c => {
+        if (c.id !== catId) return c;
+        const subs = c.subcats.slice();
+        const [item] = subs.splice(fromIdx, 1);
+        subs.splice(toIdx, 0, item);
+        return { ...c, subcats: subs };
+      });
+      setCategories(cats);
+      reRenderSubcats(catId);
+    });
+  });
 }
 
 /* ── Modal categoria ── */
