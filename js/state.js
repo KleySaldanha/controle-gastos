@@ -14,7 +14,7 @@ import { auth, db } from './firebase.js';
 
 export let state = {
   year:       new Date().getFullYear(),
-  month:      new Date().getMonth(),
+  month:      -1,
   salary:     {},
   entries:    [],
   categories: null,   // null = usar padrão de config.js
