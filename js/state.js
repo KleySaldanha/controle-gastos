@@ -20,9 +20,18 @@ export let state = {
   categories: null,   // null = usar padrão de config.js
 };
 
-/** Retorna as categorias ativas (customizadas ou padrão) */
+const CAT_ORDER = ['fixed', 'variable', 'reserve', 'goals', 'invest'];
+
+/** Retorna as categorias ativas na ordem canônica */
 export function getCategories() {
-  return state.categories ?? CATEGORIES;
+  const cats = state.categories ?? CATEGORIES;
+  return [...cats].sort((a, b) => {
+    const ai = CAT_ORDER.indexOf(a.id);
+    const bi = CAT_ORDER.indexOf(b.id);
+    const av = ai === -1 ? 99 : ai;
+    const bv = bi === -1 ? 99 : bi;
+    return av - bv;
+  });
 }
 
 /** Substitui toda a lista de categorias e persiste */
